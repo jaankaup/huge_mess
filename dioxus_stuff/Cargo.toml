@@ -11,11 +11,3 @@ publish = false
 dioxus = "0.4"
 dioxus-desktop = "0.4"
 dioxus-html = "0.4"
-
-[profile.dev]
-opt-level = 3
-debug = true
-
-[profile.release]
-opt-level = 3
-debug = false
