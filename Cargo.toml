@@ -1,0 +1,46 @@
+[workspace]
+resolver = "2"
+
+members = [
+    "engine",
+    "dioxus_stuff",
+]
+
+[workspace.dependencies]
+
+# Dioxus dependencies
+dioxus = "0.4"
+dioxus-desktop = "0.4"
+dioxus-html = "0.4"
+
+bytemuck = { version = "1.14", features = ["derive"] }
+log = "0.4"
+png = "0.17.10"
+raw-window-handle = "0.6"
+ron = "0.8"
+serde = "1"
+serde_json = "1.0.108"
+wgpu = { git = "https://github.com/gfx-rs/wgpu", rev="41fb222726d0786edb3b2d162e39f2d6c7e1f04f" }
+cgmath = "0.18"
+version = "0.29"
+thiserror = "1"
+cfg-if = "1"
+winit = "0.29"
+
+# wasm32 dependencies
+console_error_panic_hook = "0.1.7"
+console_log = "1"
+js-sys = "0.3.66"
+wasm-bindgen = "0.2.87"
+wasm-bindgen-futures = "0.4.39"
+wasm-bindgen-test = "0.3"
+web-time = "0.2.3"
+web-sys = "0.3.66"
+
+[profile.dev]
+opt-level = 3
+debug = false
+
+[profile.release]
+opt-level = 3
+debug = false
