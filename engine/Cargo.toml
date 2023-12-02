@@ -13,6 +13,12 @@ winit.workspace = true
 raw-window-handle.workspace = true
 cfg-if.workspace = true
 log.workspace = true
+web-time.workspace = true
+pollster.workspace = true
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+env_logger.workspace = true
+
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 web-sys = { workspace = true, features = [
@@ -149,6 +155,6 @@ web-sys = { workspace = true, features = [
 wasm-bindgen.workspace = true
 js-sys.workspace = true
 wasm-bindgen-futures.workspace = true
-# parking_lot.workspace = true
+#parking_lot.workspace = true
 
 

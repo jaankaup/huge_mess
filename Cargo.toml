@@ -15,6 +15,9 @@ members = [
     "dioxus_stuff",
 ]
 
+[dependencies]
+engine = { path = "engine" }
+
 [workspace.dependencies]
 
 # Dioxus dependencies
@@ -35,6 +38,8 @@ version = "0.29"
 thiserror = "1"
 cfg-if = "1"
 winit = "0.29"
+env_logger = "0.10"
+pollster = "0.3"
 
 # wasm32 dependencies
 console_error_panic_hook = "0.1.7"
