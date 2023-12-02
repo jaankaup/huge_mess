@@ -1,6 +1,15 @@
 [workspace]
 resolver = "2"
 
+[package]
+name = "huge-mess"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "smoke"
+path = "src/smoke/smoke.rs"
+
 members = [
     "engine",
     "dioxus_stuff",
