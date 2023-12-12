@@ -13,10 +13,12 @@ path = "src/smoke/smoke.rs"
 members = [
     "engine",
     "dioxus_stuff",
+#    "graphs",
 ]
 
 [dependencies]
 engine = { path = "engine" }
+# my_dot = { path = "graphs" }
 
 [workspace.dependencies]
 
