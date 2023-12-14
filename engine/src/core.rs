@@ -1,56 +1,57 @@
- use std::sync::Arc;
- use winit::{
-     dpi::PhysicalSize,
-     event::{Event,StartCause}, // KeyEvent, , WindowEvent},
-     event_loop::{EventLoop}, //, EventLoopWindowTarget},
-     // keyboard::{Key, NamedKey},
-     window::Window,
- };
- 
- use wgpu::{Instance /*, Surface */};
+use crate::input_cache::InputCache;
+use std::sync::Arc;
+use winit::{
+    dpi::PhysicalSize,
+    event::{Event,StartCause}, // KeyEvent, , WindowEvent},
+    event_loop::{EventLoop}, //, EventLoopWindowTarget},
+    // keyboard::{Key, NamedKey},
+    window::Window,
+};
 
- /// Context containing global wgpu resources.
- pub struct WGPUContext {
-     pub instance: wgpu::Instance,
-     pub adapter: wgpu::Adapter,
-     pub device: wgpu::Device,
-     pub queue: wgpu::Queue,
- }
+use wgpu::{Instance /*, Surface */};
 
- 
- /// A trait for event loops.
- pub trait Loop: Sized + 'static {
-     fn init() -> Self;
-     fn start<A: Application>(title: &str, context: WGPUContext, surface: SurfaceWrapper); //, wgpu_context: WGPUContext);
-     // fn start<A: Application>(&self, title: &str, context: WGPUContext, surface: SurfaceWrapper); //, wgpu_context: WGPUContext);
- }
- 
- /// A trait for application wgpu-features.
- pub trait WGPUFeatures: Sized + 'static {
- 
-     // const SRGB: bool = true;
- 
-     fn optional_features() -> wgpu::Features {
-         wgpu::Features::empty()
-     }
- 
-     fn required_features() -> wgpu::Features {
-         wgpu::Features::empty()
-     }
- 
-     fn required_downlevel_capabilities() -> wgpu::DownlevelCapabilities {
-         wgpu::DownlevelCapabilities {
-             flags: wgpu::DownlevelFlags::empty(),
-             shader_model: wgpu::ShaderModel::Sm5,
-             ..wgpu::DownlevelCapabilities::default()
-         }
-     }
- 
-     fn required_limits() -> wgpu::Limits {
-         wgpu::Limits::downlevel_webgl2_defaults()
-     }
- }
- 
+/// Context containing global wgpu resources.
+pub struct WGPUContext {
+    pub instance: wgpu::Instance,
+    pub adapter: wgpu::Adapter,
+    pub device: wgpu::Device,
+    pub queue: wgpu::Queue,
+}
+
+
+/// A trait for event loops.
+pub trait Loop: Sized + 'static {
+    fn init() -> Self;
+    fn start<A: Application>(title: &str, context: WGPUContext, surface: SurfaceWrapper); //, wgpu_context: WGPUContext);
+    // fn start<A: Application>(&self, title: &str, context: WGPUContext, surface: SurfaceWrapper); //, wgpu_context: WGPUContext);
+}
+
+/// A trait for application wgpu-features.
+pub trait WGPUFeatures: Sized + 'static {
+
+    // const SRGB: bool = true;
+
+    fn optional_features() -> wgpu::Features {
+        wgpu::Features::empty()
+    }
+
+    fn required_features() -> wgpu::Features {
+        wgpu::Features::empty()
+    }
+
+    fn required_downlevel_capabilities() -> wgpu::DownlevelCapabilities {
+        wgpu::DownlevelCapabilities {
+            flags: wgpu::DownlevelFlags::empty(),
+            shader_model: wgpu::ShaderModel::Sm5,
+            ..wgpu::DownlevelCapabilities::default()
+        }
+    }
+
+    fn required_limits() -> wgpu::Limits {
+        wgpu::Limits::downlevel_webgl2_defaults()
+    }
+}
+
 pub struct EventLoopWrapper {
      pub event_loop: EventLoop<()>,
      pub window: Arc<Window>,
@@ -226,7 +227,7 @@ pub struct SurfaceWrapper {
      fn resize(&mut self, wgpu_context: &WGPUContext, surface_configuration: &wgpu::SurfaceConfiguration, new_size: winit::dpi::PhysicalSize<u32>);
  
      /// Updating of the application.
-     fn update(&mut self, wgpu_context: &WGPUContext); //, input_cache: &InputCache);
+     fn update(&mut self, wgpu_context: &WGPUContext, input_cache: &InputCache);
                                                          
      /// Closing of the application.
      fn close(&mut self, wgpu_context: &WGPUContext);

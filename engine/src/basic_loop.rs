@@ -1,3 +1,4 @@
+use crate::input_cache::InputCache;
 use crate::core::{
     Loop,
     WGPUContext,
@@ -31,6 +32,7 @@ impl Loop for BasicLoop {
         // let mut application: Option<Application> = None;
         let mut application = None;
         let window_loop = EventLoopWrapper::new(title);
+        let mut input_cache = InputCache::init();
         // let mut surface = SurfaceWrapper::new();
         // let context = WGPUContext::init_async::<A>(&mut surface, window_loop.window.clone()).await;
 
@@ -132,7 +134,10 @@ impl Loop for BasicLoop {
 
                             window_loop.window.request_redraw();
                         }
-                        _ => application.as_mut().unwrap().update(&context), // Input cache
+                        _ => {
+                            input_cache.update(&event);
+                            application.as_mut().unwrap().update(&context, &input_cache ); // Input cache
+                        },
                     },
                     _ => {}
                 }

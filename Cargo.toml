@@ -37,6 +37,7 @@ cfg-if = "1"
 winit = "0.29"
 env_logger = "0.10"
 pollster = "0.3"
+instant = { version = "0.1.12", features = ["wasm-bindgen"] }
 
 # wasm32 dependencies
 console_error_panic_hook = "0.1.7"
