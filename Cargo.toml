@@ -1,24 +1,19 @@
 [workspace]
 resolver = "2"
+members = [
+    "engine",
+    "dioxus_stuff",
+    "examples",
+]
 
-[package]
+[workspace.package]
 name = "huge-mess"
 version = "0.1.0"
 edition = "2021"
 
-[[bin]]
-name = "smoke"
-path = "src/smoke/smoke.rs"
-
-members = [
-    "engine",
-    "dioxus_stuff",
-#    "graphs",
-]
-
-[dependencies]
-engine = { path = "engine" }
-# my_dot = { path = "graphs" }
+[workspace.dependencies.engine]
+package = "engine"
+path = "./engine"
 
 [workspace.dependencies]
 

@@ -1,0 +1,15 @@
+[package]
+name = "examples"
+version.workspace = true
+edition.workspace = true
+
+# [dependencies.engine]
+# workspace = true
+
+[dependencies]
+wgpu.workspace = true
+engine.workspace = true
+
+[[example]]
+name = "smoke"
+path = "smoke/src/smoke.rs"
