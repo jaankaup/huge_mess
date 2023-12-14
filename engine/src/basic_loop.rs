@@ -7,12 +7,11 @@ use crate::core::{
 };
 
 use winit::{
-    dpi::PhysicalSize,
-    event::{Event, KeyEvent, StartCause, WindowEvent},
+    /* dpi::PhysicalSize, */
+    event::{Event, KeyEvent, /* StartCause, */ WindowEvent},
     event_loop::{EventLoop, EventLoopWindowTarget, ControlFlow},
     keyboard::{Key, NamedKey},
-    window::Window,
-
+    /* window::Window, */
 };
 
 /// A "basic" loop.
@@ -24,13 +23,15 @@ impl Loop for BasicLoop {
         BasicLoop {}
     }
 
-    fn start<A: Application>(&self, title: &str, application: A, context: WGPUContext) {
+    // fn start<A: Application>(&self, title: &str, context: WGPUContext, surface: SurfaceWrapper) {
+    fn start<A: Application>(title: &str, context: WGPUContext, mut surface: SurfaceWrapper) {
 
     // init_logger();
       
-        let mut application: Option<A> = None;
+        // let mut application: Option<Application> = None;
+        let mut application = None;
         let window_loop = EventLoopWrapper::new(title);
-        let mut surface = SurfaceWrapper::new();
+        // let mut surface = SurfaceWrapper::new();
         // let context = WGPUContext::init_async::<A>(&mut surface, window_loop.window.clone()).await;
 
         cfg_if::cfg_if! {
@@ -117,7 +118,7 @@ impl Loop for BasicLoop {
                             // frame_counter.update();
 
                             let frame = surface.acquire(&context);
-                            let view = frame.texture.create_view(&wgpu::TextureViewDescriptor {
+                            let _view = frame.texture.create_view(&wgpu::TextureViewDescriptor {
                                 format: Some(surface.config().view_formats[0]),
                                 ..wgpu::TextureViewDescriptor::default()
                             });
@@ -139,63 +140,3 @@ impl Loop for BasicLoop {
         );
     }
 }
-
-        // match event {
-
-        //     // Event::NewEvents(start_cause) => {
-        //     //     match start_cause {
-        //     //         Init => {}
-        //     //         _ => {}
-        //     //     }
-        //     // }
-
-        //     Event::LoopDestroyed => {
-        //         application.exit(&device, &queue, &input, &spawner);
-        //     }
-
-        //     // TODO: check if pre_update and update are conficting in some circumstances.
-        //     Event::MainEventsCleared => {
-        //         application.input(&queue, &input);
-        //         application.update(&device, &queue, &input, &spawner);
-        //         input.pre_update();
-        //         window.request_redraw();
-        //     }
-        //     Event::RedrawEventsCleared => {
-        //         #[cfg(not(target_arch = "wasm32"))]
-        //         {
-        //             spawner.run_until_stalled();
-        //         }
-
-        //         let close_application = input.key_state(&Key::Q);
-        //         if close_application.is_some() {
-        //             *control_flow = ControlFlow::Exit;
-        //         }
-        //     }
-        //     Event::WindowEvent { event, ..} => {
-        //         // Update input cache.
-        //         input.update(&event);
-
-        //         match event { // Add ScaleFactorChanged.
-        //             WindowEvent::Resized(new_size) => {
-        //                 size = new_size;
-        //                 sc_desc.width = new_size.width.max(1);
-        //                 sc_desc.height = new_size.height.max(1);
-        //                 surface.configure(&device, &sc_desc);
-        //                 application.resize(&device, &sc_desc, size);
-        //             }
-        //             WindowEvent::CloseRequested => {
-        //                 *control_flow = ControlFlow::Exit
-        //             }
-        //             _ => {}
-        //         }
-        //     }
-        //     Event::RedrawRequested(_) => {
-        //         #[cfg(not(target_arch = "wasm32"))]
-        //         application.render(&device, &mut queue, &surface, &sc_desc, &spawner);
-
-        //         #[cfg(target_arch = "wasm32")]
-        //         application.render(&device, &mut queue, &surface, &sc_desc, &offscreen_canvas_setup, &spawner);
-        //     }
-        //     _ => { } // Any other events
-        // } // match event
-    // }); // run

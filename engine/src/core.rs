@@ -7,12 +7,22 @@
      window::Window,
  };
  
- use wgpu::{Instance, Surface};
+ use wgpu::{Instance /*, Surface */};
+
+ /// Context containing global wgpu resources.
+ pub struct WGPUContext {
+     pub instance: wgpu::Instance,
+     pub adapter: wgpu::Adapter,
+     pub device: wgpu::Device,
+     pub queue: wgpu::Queue,
+ }
+
  
  /// A trait for event loops.
  pub trait Loop: Sized + 'static {
      fn init() -> Self;
-     fn start<A: Application>(&self, title: &str, application: A, context: WGPUContext); //, wgpu_context: WGPUContext);
+     fn start<A: Application>(title: &str, context: WGPUContext, surface: SurfaceWrapper); //, wgpu_context: WGPUContext);
+     // fn start<A: Application>(&self, title: &str, context: WGPUContext, surface: SurfaceWrapper); //, wgpu_context: WGPUContext);
  }
  
  /// A trait for application wgpu-features.
@@ -222,15 +232,8 @@ pub struct SurfaceWrapper {
      fn close(&mut self, wgpu_context: &WGPUContext);
  }
  
- /// Context containing global wgpu resources.
- pub struct WGPUContext {
-     pub instance: wgpu::Instance,
-     pub adapter: wgpu::Adapter,
-     pub device: wgpu::Device,
-     pub queue: wgpu::Queue,
- }
-
-async fn init_async<A: Application, F: WGPUFeatures>(surface: &mut SurfaceWrapper, window: Arc<Window>) -> WGPUContext {
+/// Create wgpu core elements for application.
+pub async fn setup<F: WGPUFeatures>(surface: &mut SurfaceWrapper, window: Arc<Window>) -> WGPUContext {
     log::info!("Initializing wgpu...");
 
     let backends = wgpu::util::backend_bits_from_env().unwrap_or_default();
@@ -296,5 +299,34 @@ async fn init_async<A: Application, F: WGPUFeatures>(surface: &mut SurfaceWrappe
         adapter,
         device,
         queue,
+    }
+}
+
+pub fn run<F: WGPUFeatures, L: Loop, A: Application>(title: &'static str) {
+
+    // Create surface.
+    let mut surface = SurfaceWrapper::new();
+
+    // Event loop.
+    let window_loop = EventLoopWrapper::new(title);
+
+    cfg_if::cfg_if! {
+        if #[cfg(target_arch = "wasm32")] {
+            wasm_bindgen_futures::spawn_local(async move {
+
+                // Create context.
+                let context = setup::<F>(&mut surface, window_loop.window.clone()).await.unwrap();
+
+                // Start loop. TODO: add window_loop as parameter
+                L::start::<A>(&self, title: &str, context, surface); //, wgpu_context: WGPUContext);
+            })
+        } else {
+
+            // Create context.
+            let context = pollster::block_on(setup::<F>(&mut surface, window_loop.window.clone()));
+
+            // Start loop. TODO: add window_loop as parameter
+            L::start::<A>(title, context, surface); //, wgpu_context: WGPUContext);
+        }
     }
 }
