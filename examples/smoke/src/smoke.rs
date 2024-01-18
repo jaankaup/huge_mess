@@ -1,3 +1,5 @@
+use wgpu::StoreOp;
+use wgpu::TextureView;
 use engine::core::SurfaceWrapper;
 use engine::basic_loop::BasicLoop;
 use crate::configuration::SmokeFeatures;
@@ -56,27 +58,32 @@ impl Application for DummyExampleApp {
     }
 
     /// Render application.
-    fn render(&mut self, context: &WGPUContext, surface: &SurfaceWrapper ) {
+    fn render(&mut self, context: &WGPUContext, view: &TextureView, surface: &SurfaceWrapper ) {
 
-        // let _view = surface.surface.as_ref().unwrap().texture.create_view(&wgpu::TextureViewDescriptor::default());
-        // let _view = surface.surface.as_ref().unwrap().get_current_texture().unwrap().texture.create_view(&wgpu::TextureViewDescriptor::default());
-        // context.acquire(&mut self, context: &WGPUContext)();
-        // if self.render {
+            let clear_color = Some(wgpu::Color { r: 1.0, g: 0.0, b: 0.0, a: 1.0, });
 
-        //     // Acquire screen.
-        //     self.screen.acquire_screen_texture(
-        //         device,
-        //         sc_desc,
-        //         surface
-        //         );
-
-        //     // Create view.
-        //     let _view = self.screen.surface_texture.as_ref().unwrap().texture.create_view(&wgpu::TextureViewDescriptor::default());
-
-        //     // Prepare rendering.
-        //     self.screen.prepare_for_rendering();
-
-        // } // render
+            // If there is nothing to draw, this must be executed.
+            let mut dummy_encoder = context.device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: Some("Dummy encoder") });
+            {
+                let render_pass = dummy_encoder.begin_render_pass(
+                    &wgpu::RenderPassDescriptor {
+                        label: Some("Render pass descriptor"),
+                        color_attachments: &[
+                            Some(wgpu::RenderPassColorAttachment {
+                                view,
+                                resolve_target: None,
+                                ops: wgpu::Operations {
+                                    load: wgpu::LoadOp::Clear(clear_color.unwrap()),
+                                    store: StoreOp::Store,
+                                },
+                            }),
+                        ],
+                        depth_stencil_attachment: None,
+                        timestamp_writes: None,
+                        occlusion_query_set: None,
+                    });
+            }
+            context.queue.submit(Some(dummy_encoder.finish()));
     }
 
     /// Handle user input.

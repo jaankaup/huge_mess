@@ -119,22 +119,18 @@ impl Loop for BasicLoop {
 
                             // frame_counter.update();
 
-                            println!("ACQUIRE");
                             let frame = surface.acquire(&context);
-                            let _view = frame.texture.create_view(&wgpu::TextureViewDescriptor {
+                            let view = frame.texture.create_view(&wgpu::TextureViewDescriptor {
                                 format: Some(surface.config().view_formats[0]),
                                 ..wgpu::TextureViewDescriptor::default()
                             });
-                            println!("ACQUIRE2");
 
                             application
                                 .as_mut()
                                 .unwrap()
-                                .render(&context, &surface);
+                                .render(&context, &view, &surface);
 
-                            println!("PRESENT");
                             frame.present();
-                            println!("PRESENT2");
 
                             window_loop.window.request_redraw();
                         }
