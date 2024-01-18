@@ -9,23 +9,7 @@ use engine::core::WGPUContext;
 use engine::core::Application;
 use engine::input_cache::InputCache;
 use engine::core; 
-// use winit::dpi::PhysicalSize;
 mod configuration; 
-
-// use crate::features::*;
-// use log::LevelFilter;
-//use winit::dpi::PhysicalSize;
-// use ufo3000::logger::initialize_simple_logger;
-// use ufo3000::input::InputCache;
-// use ufo3000::template::{
-//     WGPUContext,
-//     Application,
-//     BasicLoop,
-// };
-// use ufo3000::screen::ScreenTexture;
-// use ufo3000::camera::Camera;
-// use ufo3000::texture::Texture as ATexture;
-// use ufo3000::render_object::*;
 
 // TODO: drop renderpass if there is nothing to draw.
 
@@ -35,7 +19,7 @@ struct DummyExampleApp {
     render: bool,
 }
 
-impl Application for DummyExampleApp {
+impl Application for SmokeApp {
 
     /// Initialize application.
     fn init(configuration: &WGPUContext) -> Self {
@@ -118,13 +102,13 @@ impl Application for DummyExampleApp {
 
 fn main() {
 
-    run::<SmokeFeatures, BasicLoop, DummyExampleApp>("yeah");
+    run::<SmokeFeatures, BasicLoop, SmokeApp>("yeah");
     // Initialize logging.
     // initialize_simple_logger(&vec![("dummy_example".to_string(), LevelFilter::Info)]);
 
     // log::info!("Hekotus from smoke");
 
     // Execute application.
-    // run_loop::<DummyExampleApp, BasicLoop, dummy_features::DummyExampleFeatures>();
+    // run_loop::<SmokeApp, BasicLoop, dummy_features::SmokeFeatures>();
 
 }
