@@ -25,13 +25,13 @@ impl Loop for BasicLoop {
     }
 
     // fn start<A: Application>(&self, title: &str, context: WGPUContext, surface: SurfaceWrapper) {
-    fn start<A: Application>(title: &str, context: WGPUContext, mut surface: SurfaceWrapper) {
+    fn start<A: Application>(title: &str, context: WGPUContext, mut surface: SurfaceWrapper, window_loop: EventLoopWrapper) {
 
     // init_logger();
       
         // let mut application: Option<Application> = None;
         let mut application = None;
-        let window_loop = EventLoopWrapper::new(title);
+        // let window_loop = EventLoopWrapper::new(title);
         let mut input_cache = InputCache::init();
         // let mut surface = SurfaceWrapper::new();
         // let context = WGPUContext::init_async::<A>(&mut surface, window_loop.window.clone()).await;
@@ -53,8 +53,8 @@ impl Loop for BasicLoop {
             window_loop.event_loop,
             move |event: Event<()>, target: &EventLoopWindowTarget<()>| {
 
-                target.set_control_flow(ControlFlow::Poll);
-                // target.control_flow = ControlFlow::Wait;
+                // target.set_control_flow(ControlFlow::Poll);
+                // target.set_control_flow(ControlFlow::Wait);
                 //
                 match event {
                     ref e if SurfaceWrapper::start_condition(e) => {
@@ -119,18 +119,22 @@ impl Loop for BasicLoop {
 
                             // frame_counter.update();
 
+                            println!("ACQUIRE");
                             let frame = surface.acquire(&context);
                             let _view = frame.texture.create_view(&wgpu::TextureViewDescriptor {
                                 format: Some(surface.config().view_formats[0]),
                                 ..wgpu::TextureViewDescriptor::default()
                             });
+                            println!("ACQUIRE2");
 
                             application
                                 .as_mut()
                                 .unwrap()
-                                .render(&context);
+                                .render(&context, &surface);
 
+                            println!("PRESENT");
                             frame.present();
+                            println!("PRESENT2");
 
                             window_loop.window.request_redraw();
                         }

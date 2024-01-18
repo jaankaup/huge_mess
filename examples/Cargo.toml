@@ -9,6 +9,7 @@ edition.workspace = true
 [dependencies]
 wgpu.workspace = true
 engine.workspace = true
+winit.workspace = true
 
 [[example]]
 name = "smoke"
