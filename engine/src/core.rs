@@ -218,7 +218,7 @@ pub struct SurfaceWrapper {
  pub trait Application: Sized + 'static {
  
      /// Initialization of the application.
-     fn init(wgpu_context: &WGPUContext) -> Self; //, input_cache: &InputCache);
+     fn init(wgpu_context: &WGPUContext, surface: &SurfaceWrapper) -> Self; //, input_cache: &InputCache);
                                                        
      /// Rendering of the application.
      fn render(&mut self, context: &WGPUContext, view: &TextureView, surface: &SurfaceWrapper);

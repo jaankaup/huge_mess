@@ -56,6 +56,7 @@ impl Loop for BasicLoop {
                         if application.is_none() {
                             application = Some(A::init(
                                 &context,
+                                &surface,
                             ));
                         }
                     }

@@ -1,3 +1,6 @@
+use engine::texture::{
+    Texture as Tex,
+};
 use engine::render_pass::create_render_pass;
 use wgpu::StoreOp;
 use wgpu::TextureView;
@@ -17,6 +20,7 @@ mod configuration;
 // TODO: drop renderpass if there is nothing to draw.
 
 struct SmokeApp {
+    depth_texture: Option<Tex> 
     // screen: ScreenTexture,
     // camera: Camera,
     // render: bool,
@@ -25,7 +29,7 @@ struct SmokeApp {
 impl Application for SmokeApp {
 
     /// Initialize application.
-    fn init(_configuration: &WGPUContext) -> Self {
+    fn init(context: &WGPUContext, surface: &SurfaceWrapper) -> Self {
 
         log::info!("Initializing SmokeApp");
         
@@ -40,6 +44,7 @@ impl Application for SmokeApp {
         // camera.set_movement_sensitivity(0.2);
 
         Self {
+            depth_texture: Some(Tex::create_depth_texture(context, surface.config(), None)),
             // screen: ScreenTexture::init(&configuration.device, &configuration.sc_desc, true),
             // camera,
             // render: false,
