@@ -1,3 +1,4 @@
+use engine::render_pass::create_render_pass;
 use wgpu::StoreOp;
 use wgpu::TextureView;
 use engine::core::SurfaceWrapper;
@@ -53,23 +54,13 @@ impl Application for SmokeApp {
             // If there is nothing to draw, this must be executed.
             let mut dummy_encoder = context.device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: Some("Dummy encoder") });
             {
-                let _render_pass = dummy_encoder.begin_render_pass(
-                    &wgpu::RenderPassDescriptor {
-                        label: Some("Render pass descriptor"),
-                        color_attachments: &[
-                            Some(wgpu::RenderPassColorAttachment {
-                                view,
-                                resolve_target: None,
-                                ops: wgpu::Operations {
-                                    load: wgpu::LoadOp::Clear(clear_color.unwrap()),
-                                    store: StoreOp::Store,
-                                },
-                            }),
-                        ],
-                        depth_stencil_attachment: None,
-                        timestamp_writes: None,
-                        occlusion_query_set: None,
-                    });
+                create_render_pass(
+                    &mut dummy_encoder,
+                    view,
+                    &None, // depth
+                    true, // clear
+                    &clear_color,
+                    &None);// label
             }
             context.queue.submit(Some(dummy_encoder.finish()));
     }

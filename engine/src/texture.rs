@@ -11,19 +11,20 @@ pub struct Texture {
     depth: u32,
 }
 
-    /// TODO: how to determine address_move_x: a struct?
+    /// TODO: how to determine address_mode_x: a struct?
     /// TODO: how to determine filters: a struct?
     /// TODO: how to compare function: parameter/struct?
     /// TODO: multisampling: parameter/struct?
     /// TODO: load png files parallel/simd?
     /// TODO: error handling and validation?
-    /// TODO: logging?
 
 impl Texture {
     pub const DEPTH_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Depth32Float;
 
     /// Create a depth texture. Should we have more parameters for depth texture?
     pub fn create_depth_texture(context: &WGPUContext, sc_desc: &wgpu::SurfaceConfiguration, label: Option<&str>) -> Self {
+
+        log::debug!("Creating depth texture");
 
         let width = sc_desc.width;
         let height = sc_desc.height;
@@ -60,5 +61,9 @@ impl Texture {
         });
 
         Self { texture: Some(texture), view: Some(view), sampler: Some(sampler), width, height, depth }
+    }
+
+    pub fn get_view(&self) -> &Option<wgpu::TextureView>  {
+        &self.view
     }
 }
