@@ -1,6 +1,7 @@
 use crate::core::WGPUContext;
 
 /// Texture.
+#[allow(dead_code)]
 pub struct Texture {
     texture: Option<wgpu::Texture>,
     view: Option<wgpu::TextureView>,

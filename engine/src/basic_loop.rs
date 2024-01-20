@@ -8,11 +8,9 @@ use crate::core::{
 };
 
 use winit::{
-    /* dpi::PhysicalSize, */
     event::{Event, KeyEvent, /* StartCause, */ WindowEvent},
-    event_loop::{EventLoop, EventLoopWindowTarget, ControlFlow},
+    event_loop::{EventLoop, EventLoopWindowTarget}, //, ControlFlow},
     keyboard::{Key, NamedKey},
-    /* window::Window, */
 };
 
 /// A "basic" loop.
@@ -25,7 +23,7 @@ impl Loop for BasicLoop {
     }
 
     // fn start<A: Application>(&self, title: &str, context: WGPUContext, surface: SurfaceWrapper) {
-    fn start<A: Application>(title: &str, context: WGPUContext, mut surface: SurfaceWrapper, window_loop: EventLoopWrapper) {
+    fn start<A: Application>(_title: &str, context: WGPUContext, mut surface: SurfaceWrapper, window_loop: EventLoopWrapper) {
 
         let mut application = None;
         let mut input_cache = InputCache::init();

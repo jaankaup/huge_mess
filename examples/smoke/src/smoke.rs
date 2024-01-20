@@ -4,11 +4,11 @@ use engine::core::SurfaceWrapper;
 use engine::basic_loop::BasicLoop;
 use crate::configuration::SmokeFeatures;
 use engine::core::run;
-use winit::dpi::PhysicalSize;
+
 use engine::core::WGPUContext;
 use engine::core::Application;
 use engine::input_cache::InputCache;
-use engine::core; 
+ 
 use engine::logger::initialize_env_logger; 
 use log::LevelFilter;
 mod configuration; 
@@ -18,13 +18,13 @@ mod configuration;
 struct SmokeApp {
     // screen: ScreenTexture,
     // camera: Camera,
-    render: bool,
+    // render: bool,
 }
 
 impl Application for SmokeApp {
 
     /// Initialize application.
-    fn init(configuration: &WGPUContext) -> Self {
+    fn init(_configuration: &WGPUContext) -> Self {
 
         log::info!("Initializing SmokeApp");
         
@@ -41,19 +41,19 @@ impl Application for SmokeApp {
         Self {
             // screen: ScreenTexture::init(&configuration.device, &configuration.sc_desc, true),
             // camera,
-            render: false,
+            // render: false,
         }
     }
 
     /// Render application.
-    fn render(&mut self, context: &WGPUContext, view: &TextureView, surface: &SurfaceWrapper ) {
+    fn render(&mut self, context: &WGPUContext, view: &TextureView, _surface: &SurfaceWrapper ) {
 
             let clear_color = Some(wgpu::Color { r: 1.0, g: 0.0, b: 0.0, a: 1.0, });
 
             // If there is nothing to draw, this must be executed.
             let mut dummy_encoder = context.device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: Some("Dummy encoder") });
             {
-                let render_pass = dummy_encoder.begin_render_pass(
+                let _render_pass = dummy_encoder.begin_render_pass(
                     &wgpu::RenderPassDescriptor {
                         label: Some("Render pass descriptor"),
                         color_attachments: &[
@@ -75,16 +75,16 @@ impl Application for SmokeApp {
     }
 
     /// Resize window.
-    fn resize(&mut self, wgpu_context: &WGPUContext, surface_configuration: &wgpu::SurfaceConfiguration, new_size: winit::dpi::PhysicalSize<u32>) {
+    fn resize(&mut self, _wgpu_context: &WGPUContext, _surface_configuration: &wgpu::SurfaceConfiguration, _new_size: winit::dpi::PhysicalSize<u32>) {
 
     }
 
     /// Application update.
-    fn update(&mut self, wgpu_context: &WGPUContext, input_cache: &InputCache) {
+    fn update(&mut self, _wgpu_context: &WGPUContext, _input_cache: &InputCache) {
 
     }
 
-    fn close(&mut self, wgpu_context: &WGPUContext){ 
+    fn close(&mut self, _wgpu_context: &WGPUContext){ 
     }
 }
 
