@@ -27,14 +27,8 @@ impl Loop for BasicLoop {
     // fn start<A: Application>(&self, title: &str, context: WGPUContext, surface: SurfaceWrapper) {
     fn start<A: Application>(title: &str, context: WGPUContext, mut surface: SurfaceWrapper, window_loop: EventLoopWrapper) {
 
-    // init_logger();
-      
-        // let mut application: Option<Application> = None;
         let mut application = None;
-        // let window_loop = EventLoopWrapper::new(title);
         let mut input_cache = InputCache::init();
-        // let mut surface = SurfaceWrapper::new();
-        // let context = WGPUContext::init_async::<A>(&mut surface, window_loop.window.clone()).await;
 
         cfg_if::cfg_if! {
             if #[cfg(target_arch = "wasm32")] {
@@ -55,7 +49,7 @@ impl Loop for BasicLoop {
 
                 // target.set_control_flow(ControlFlow::Poll);
                 // target.set_control_flow(ControlFlow::Wait);
-                //
+
                 match event {
                     ref e if SurfaceWrapper::start_condition(e) => {
                         surface.resume(&context, window_loop.window.clone(), true); // E::SRGB);
@@ -63,11 +57,7 @@ impl Loop for BasicLoop {
                         // If we haven't created the example yet, do so now.
                         if application.is_none() {
                             application = Some(A::init(
-                                // surface.config(),
                                 &context,
-                                // &context.adapter,
-                                // &context.device,
-                                // &context.queue,
                             ));
                         }
                     }
@@ -80,7 +70,6 @@ impl Loop for BasicLoop {
                             application.as_mut().unwrap().resize(
                                 &context,
                                 surface.config(),
-                                // &context.queue,
                                 size
                             );
 

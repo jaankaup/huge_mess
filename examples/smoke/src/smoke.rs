@@ -74,46 +74,22 @@ impl Application for SmokeApp {
             context.queue.submit(Some(dummy_encoder.finish()));
     }
 
-    /// Handle user input.
-    // fn input(&mut self, _queue: &wgpu::Queue, _input: &InputCache) {
-
-    // }
-
     /// Resize window.
     fn resize(&mut self, wgpu_context: &WGPUContext, surface_configuration: &wgpu::SurfaceConfiguration, new_size: winit::dpi::PhysicalSize<u32>) {
-    // fn resize(&mut self, context: &WGPUContext, size: PhysicalSize<u32>) {
-    // fn resize(&mut self, &WGPUContext, sc_desc: &wgpu::SurfaceConfiguration, _new_size: winit::dpi::PhysicalSize<u32>) {
-    //fn resize(&mut self, device: &wgpu::Device, sc_desc: &wgpu::SurfaceConfiguration, _new_size: winit::dpi::PhysicalSize<u32>) {
 
-        // TODO: add this functionality to the Screen.
-        // self.screen.depth_texture = Some(ATexture::create_depth_texture(device, sc_desc, Some("depth-texture")));
-        // self.camera.resize(sc_desc.width as f32, sc_desc.height as f32);
     }
 
     /// Application update.
     fn update(&mut self, wgpu_context: &WGPUContext, input_cache: &InputCache) {
-    //fn update(&mut self, _device: &wgpu::Device, _queue: &wgpu::Queue, _input: &InputCache, _spawner: &Spawner) {
 
     }
 
-    // Exit.
-    //fn exit(&mut self, _device: &wgpu::Device, _queue: &wgpu::Queue, _input: &InputCache, _spawner: &Spawner) {
-    //    // log::info!("Exit.");
-    //}
-     fn close(&mut self, wgpu_context: &WGPUContext){ 
-     }
+    fn close(&mut self, wgpu_context: &WGPUContext){ 
+    }
 }
 
 fn main() {
 
     initialize_env_logger(&vec![("smoke".to_string(), LevelFilter::Info)]);
     run::<SmokeFeatures, BasicLoop, SmokeApp>("yeah");
-    // Initialize logging.
-    // initialize_simple_logger(&vec![("dummy_example".to_string(), LevelFilter::Info)]);
-
-    // log::info!("Hekotus from smoke");
-
-    // Execute application.
-    // run_loop::<SmokeApp, BasicLoop, dummy_features::SmokeFeatures>();
-
 }

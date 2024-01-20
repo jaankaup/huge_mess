@@ -24,7 +24,6 @@ pub struct WGPUContext {
 pub trait Loop: Sized + 'static {
     fn init() -> Self;
     fn start<A: Application>(title: &str, context: WGPUContext, surface: SurfaceWrapper, window_loop: EventLoopWrapper); //, wgpu_context: WGPUContext);
-    // fn start<A: Application>(&self, title: &str, context: WGPUContext, surface: SurfaceWrapper); //, wgpu_context: WGPUContext);
 }
 
 /// A trait for application wgpu-features.
@@ -222,7 +221,6 @@ pub struct SurfaceWrapper {
      fn init(wgpu_context: &WGPUContext) -> Self; //, input_cache: &InputCache);
                                                        
      /// Rendering of the application.
-     // fn render(&mut self, wgpu_context: &WGPUContext, surface: &SurfaceWrapper); // TODO specify which context is used.
      fn render(&mut self, context: &WGPUContext, view: &TextureView, surface: &SurfaceWrapper);
  
      /// Resizing of the application.
@@ -308,28 +306,31 @@ pub async fn setup<F: WGPUFeatures>(surface: &mut SurfaceWrapper, window: Arc<Wi
 pub fn run<F: WGPUFeatures, L: Loop, A: Application>(title: &'static str) {
 
     // Create surface.
+
+    log::info!("Creating surface wrapper...");
     let mut surface = SurfaceWrapper::new();
 
     // Event loop.
+    log::info!("Creating eventloop wrapper...");
     let window_loop = EventLoopWrapper::new(title);
 
     cfg_if::cfg_if! {
         if #[cfg(target_arch = "wasm32")] {
             wasm_bindgen_futures::spawn_local(async move {
 
-                // Create context.
+                log::info!("Creating WGPUContext...");
                 let context = setup::<F>(&mut surface, window_loop.window.clone()).await.unwrap();
 
-                // Start loop. TODO: add window_loop as parameter
-                L::start::<A>(&self, title: &str, context, surface, window_loop); //, wgpu_context: WGPUContext);
+                log::info!("Staring event loop...");
+                L::start::<A>(&self, title: &str, context, surface, window_loop);
             })
         } else {
 
-            // Create context.
+            log::info!("Creating WGPUContext...");
             let context = pollster::block_on(setup::<F>(&mut surface, window_loop.window.clone()));
 
-            // Start loop. TODO: add window_loop as parameter
-            L::start::<A>(title, context, surface, window_loop); //, wgpu_context: WGPUContext);
+            log::info!("Staring event loop...");
+            L::start::<A>(title, context, surface, window_loop);
         }
     }
 }
