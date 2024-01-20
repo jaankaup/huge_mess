@@ -9,11 +9,13 @@ use engine::core::WGPUContext;
 use engine::core::Application;
 use engine::input_cache::InputCache;
 use engine::core; 
+use engine::logger::initialize_env_logger; 
+use log::LevelFilter;
 mod configuration; 
 
 // TODO: drop renderpass if there is nothing to draw.
 
-struct DummyExampleApp {
+struct SmokeApp {
     // screen: ScreenTexture,
     // camera: Camera,
     render: bool,
@@ -24,6 +26,8 @@ impl Application for SmokeApp {
     /// Initialize application.
     fn init(configuration: &WGPUContext) -> Self {
 
+        log::info!("Initializing SmokeApp");
+        
         // Create camera.
         // let mut camera = Camera::new(configuration.size.width as f32,
         //                              configuration.size.height as f32,
@@ -102,6 +106,7 @@ impl Application for SmokeApp {
 
 fn main() {
 
+    initialize_env_logger(&vec![("smoke".to_string(), LevelFilter::Info)]);
     run::<SmokeFeatures, BasicLoop, SmokeApp>("yeah");
     // Initialize logging.
     // initialize_simple_logger(&vec![("dummy_example".to_string(), LevelFilter::Info)]);

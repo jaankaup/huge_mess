@@ -10,6 +10,7 @@ edition.workspace = true
 wgpu.workspace = true
 engine.workspace = true
 winit.workspace = true
+log.workspace = true
 
 [[example]]
 name = "smoke"

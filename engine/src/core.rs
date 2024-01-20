@@ -133,7 +133,6 @@ pub struct SurfaceWrapper {
          let height = window_size.height.max(1);
  
          log::info!("Surface resume {window_size:?}");
-         println!("Surface resume {window_size:?}");
  
          // We didn't create the surface in pre_adapter, so we need to do so now.
          if !cfg!(target_arch = "wasm32") {
@@ -166,7 +165,6 @@ pub struct SurfaceWrapper {
      /// Resize the surface, making sure to not resize to zero.
      pub fn resize(&mut self, context: &WGPUContext, size: PhysicalSize<u32>) {
          log::info!("Surface resize {size:?}");
-         println!("Surface resize {size:?}");
  
          let config = self.config.as_mut().unwrap();
          config.width = size.width.max(1);
