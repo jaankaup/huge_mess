@@ -1,8 +1,8 @@
 use engine::texture::{
     Texture as Tex,
 };
+use engine::camera::Camera;
 use engine::render_pass::create_render_pass;
-use wgpu::StoreOp;
 use wgpu::TextureView;
 use engine::core::SurfaceWrapper;
 use engine::basic_loop::BasicLoop;
@@ -17,13 +17,9 @@ use engine::logger::initialize_env_logger;
 use log::LevelFilter;
 mod configuration; 
 
-// TODO: drop renderpass if there is nothing to draw.
-
 struct SmokeApp {
-    depth_texture: Option<Tex> 
-    // screen: ScreenTexture,
-    // camera: Camera,
-    // render: bool,
+    _depth_texture: Option<Tex>, 
+    _camera: Camera,
 }
 
 impl Application for SmokeApp {
@@ -32,21 +28,25 @@ impl Application for SmokeApp {
     fn init(context: &WGPUContext, surface: &SurfaceWrapper) -> Self {
 
         log::info!("Initializing SmokeApp");
+
+        // let config = self.config.as_mut().unwrap();
+        // config.width = size.width.max(1);
+        // config.height = size.height.max(1);
         
         // Create camera.
-        // let mut camera = Camera::new(configuration.size.width as f32,
-        //                              configuration.size.height as f32,
-        //                              (180.0, 130.0, 480.0),
-        //                              -89.0,
-        //                              -4.0
-        // );
-        // camera.set_rotation_sensitivity(0.4);
-        // camera.set_movement_sensitivity(0.2);
+        let mut camera = Camera::new(surface.config().width as f32,
+                                     surface.config().height as f32,
+                                     (180.0, 130.0, 480.0),
+                                     -89.0,
+                                     -4.0
+        );
+        camera.set_rotation_sensitivity(0.4);
+        camera.set_movement_sensitivity(0.2);
 
         Self {
-            depth_texture: Some(Tex::create_depth_texture(context, surface.config(), None)),
+            _depth_texture: Some(Tex::create_depth_texture(context, surface.config(), None)),
             // screen: ScreenTexture::init(&configuration.device, &configuration.sc_desc, true),
-            // camera,
+            _camera: camera,
             // render: false,
         }
     }

@@ -1,9 +1,10 @@
 use std::collections::HashMap;
 use instant;
 
+use winit::keyboard::PhysicalKey;
 use winit::event as ev;
 use winit::keyboard as kb;
-pub use kb::Key as Key;
+pub use kb::KeyCode as Key;
 pub use ev::KeyEvent as KeyEv;
 
 use winit::dpi::PhysicalPosition;
@@ -313,33 +314,22 @@ impl InputCache {
         }
     }
     /// Update the state of keyboard.
-    //fn track_keyboard(&mut self, evt: ev::WindowEvent) {
     fn track_keyboard(&mut self, evt: KeyEv) {
-        //if let Some(key) = evt.logical_key {
-        let key = evt.logical_key; // {
-            match self.keyboard.get_mut(&key) {
-                Some(state) => {
-                    // Update the key time value.
-
-                    let _debug_state = state.update(&evt.state, self.time_now);
-
-                    #[cfg(feature = "input_debug")]
-                    {
-                        log::info!("Updating key {:?} :: {:?}", key, _debug_state);
+        //let key = evt.logical_key; // {
+        match evt.physical_key {
+            PhysicalKey::Code(key_code) => 
+                match self.keyboard.get_mut(&key_code) {
+                    Some(state) => {
+                        // Update the key time value.
+                        let _debug_state = state.update(&evt.state, self.time_now);
+                    },
+                    None => {
+                        // The key doesn't have any state. Add a new pressed state for this key.
+                        let _ = self.keyboard.insert(key_code, InputState::Pressed(self.time_now));
                     }
-                }
-                None => {
-
-                    // The key doesn't have any state. Add a new pressed state for this key.
-                    #[cfg(feature = "input_debug")]
-                    {
-                        log::info!("The key {:?} is pressed at time {:?}", key, self.time_now);
-                    }
-                    let _ = self.keyboard.insert(key, InputState::Pressed(self.time_now));
-                }
-            }
-            // TODO: implement these with lambda functions.
-        //}
+                },
+                _ => {}
+        }
     }
     /// Update the state of mouse buttons.
     fn track_mouse_button(&mut self, button: ev::MouseButton, state: ev::ElementState) {
