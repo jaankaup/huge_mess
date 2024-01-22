@@ -12,6 +12,7 @@ use engine::core::run;
 use engine::core::WGPUContext;
 use engine::core::Application;
 use engine::input_cache::InputCache;
+use engine::meshes::create_cube;
  
 use engine::logger::initialize_env_logger; 
 use log::LevelFilter;
@@ -20,6 +21,7 @@ mod configuration;
 struct SmokeApp {
     _depth_texture: Option<Tex>, 
     _camera: Camera,
+    _buffer: wgpu::Buffer,
 }
 
 impl Application for SmokeApp {
@@ -47,6 +49,7 @@ impl Application for SmokeApp {
             _depth_texture: Some(Tex::create_depth_texture(context, surface.config(), None)),
             // screen: ScreenTexture::init(&configuration.device, &configuration.sc_desc, true),
             _camera: camera,
+            _buffer: create_cube(&context.device, true),
             // render: false,
         }
     }
