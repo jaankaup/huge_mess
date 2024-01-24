@@ -31,10 +31,6 @@ impl Application for SmokeApp {
 
         log::info!("Initializing SmokeApp");
 
-        // let config = self.config.as_mut().unwrap();
-        // config.width = size.width.max(1);
-        // config.height = size.height.max(1);
-        
         // Create camera.
         let mut camera = Camera::new(surface.config().width as f32,
                                      surface.config().height as f32,

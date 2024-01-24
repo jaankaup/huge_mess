@@ -8,3 +8,4 @@ pub mod render_pass;
 pub mod misc;
 pub mod buffer;
 pub mod meshes;
+pub mod pipelines;
