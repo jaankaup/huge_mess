@@ -1,6 +1,8 @@
+use std::num::NonZeroU32;
 use std::hash::Hash;
 use std::string::String;
 use std::collections::HashMap;
+use wgpu::Label;
 // use wgpu::BindGroupLayoutEntry;
 
 type EntryLocation = (i32, i32);
@@ -29,19 +31,13 @@ type EntryLocation = (i32, i32);
 ///
 ///
 
-
-
-// LayoutMapper::add(EntryLocation(0,1), 
-//                   Option<T>,
-//               create_uniform_bindgroup_layout(0, wgpu::ShaderStages::VERTEX | wgpu::ShaderStages::FRAGMENT),
-//               MyShaderLayout::CameraUniformLayout)
-//     );
-
+/// A struct that hold information about bind group layout entry and its location.
 struct LayoutData {
     bind_group_layout_entry: wgpu::BindGroupLayoutEntry, 
     entry_location: EntryLocation,
 }
 
+/// TODO: documentation.
 pub struct LayoutMapper<T: std::cmp::Eq + Hash + Copy > {
     layout_data: Vec<LayoutData>,
     mapping: HashMap<T, u32>, 
@@ -73,49 +69,39 @@ impl<T: std::cmp::Eq + Hash + Copy> LayoutMapper<T> {
     }
 }
 
-// impl<T> LayoutEntries<T> {
-//     
-//     /// Initializer.
-//     pub fn init() -> Self {
-//         Self {
-//             layouts: HashMap::with_capacity(15),
-//             layout_names_to_location: None,
-//             layout_names_to_bind_group_index: None,
-//         }
-//     }
-// 
-//     /// Insert a layout entry at some location. It's now allowed to store entry layout a location
-//     /// that already exists.
-//     pub fn insert(&mut self, location: EntryLocation, entry: wgpu::BindGroupLayoutEntry, tag: &Option<T>) -> Result<(), String> {
-//         if self.layouts.contains_key(&location) {
-//             Err(format!("LayoutEntries already contains entry {:?}. A location can only be inserted once.", location))
-//         }
-//         else {
-//             self.layouts.insert(location, entry);
-//             Ok(())
-//         }
-//     }
-// 
-//     /// Validate layout entries.
-//     /// Checks that all layout entries are in sequences (0,0), (0,1), (0,3) results an error
-//     /// because (0,2) entry layout is missing.
-//     pub fn validate(&self) -> Result<(), String> {
-//         unimplemented!("Not implemented yet.")
-//     }
-// 
-//     /// Create bind group layouts from entries.
-//     pub fn create_bind_group_layouts(&self) -> Vec<wgpu::BindGroupLayout> {
-// 
-//         // let mut keys = self.layouts.keys().collect::<Vec<_>>();
-//         // keys.sort_unstable();
-// 
-//         // let mut result;
-//         // for k in keys.iter() {
-//         //     result.push_back(self.layouts.get().as_ref().to_owned());
-//         // }
-//         // self.layouts.into_iter().
-//         unimplemented!("Not implemented yet.")
-//     }
-// }
 
-// pub fn create_render_pipeline(device: &wgpu::Device,
+/// A pipeline for 
+pub struct RenderPipelineWrapper {
+
+    pipeline: wgpu::RenderPipeline,
+}
+
+impl RenderPipelineWrapper {
+    pub fn init(
+            device: &wgpu::Device,
+            layout: &wgpu::PipelineLayout,
+            vertex_state: &wgpu::VertexState,
+            primitive_state: &wgpu::PrimitiveState,
+            depth_stencil_state: &Option<wgpu::DepthStencilState>,
+            multisample_state: wgpu::MultisampleState,
+            fragment_state: &Option<wgpu::FragmentState>,
+            multiview: &Option<NonZeroU32>,
+            label: Label) -> Self {
+
+        // Create the render pipeline.
+        let pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+            label: label,
+            layout: Some(layout),
+            vertex: vertex_state.to_owned(),
+            primitive: *primitive_state,
+            depth_stencil: if depth_stencil_state.is_none() { None } else { depth_stencil_state.to_owned() },
+            multisample: multisample_state,
+            fragment: if fragment_state.is_none() { None } else { fragment_state.to_owned() },
+            multiview: *multiview,
+        });
+
+        Self {
+            pipeline: pipeline,
+        }
+    }
+}
