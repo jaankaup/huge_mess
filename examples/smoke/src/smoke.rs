@@ -7,6 +7,7 @@ use wgpu::TextureView;
 use engine::core::SurfaceWrapper;
 use engine::basic_loop::BasicLoop;
 use crate::configuration::SmokeFeatures;
+use crate::smoke_pipelines::create_default_render_pipeline;
 use engine::core::run;
 
 use engine::core::WGPUContext;
@@ -17,6 +18,7 @@ use engine::meshes::create_cube;
 use engine::logger::initialize_env_logger; 
 use log::LevelFilter;
 mod configuration; 
+mod smoke_pipelines; 
 
 struct SmokeApp {
     _depth_texture: Option<Tex>, 
