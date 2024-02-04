@@ -90,11 +90,12 @@ impl<T: std::cmp::Eq + Hash + Copy> LayoutMapper<T> {
 
 
 /// A wrapper for render pipeline. Do we need a wrapper, or just a function? 
-pub struct RenderPipelineWrapper {
+pub struct RenderPipelineWrapper<T: std::cmp::Eq + Hash + Copy> {
     pipeline: wgpu::RenderPipeline,
+    layout_mapper: LayoutMapper<T>,
 }
 
-impl RenderPipelineWrapper {
+impl<T: std::cmp::Eq + Hash + Copy> RenderPipelineWrapper<T> {
     pub fn init(
             device: &wgpu::Device,
             layout: &wgpu::PipelineLayout,
@@ -104,7 +105,9 @@ impl RenderPipelineWrapper {
             multisample_state: wgpu::MultisampleState,
             fragment_state: &Option<wgpu::FragmentState>,
             multiview: &Option<NonZeroU32>,
-            label: Label) -> Self {
+            label: Label,
+            layout_mapper: LayoutMapper<T>
+            ) -> Self {
 
      // Create the render pipeline.
      let pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
@@ -120,6 +123,7 @@ impl RenderPipelineWrapper {
 
      Self {
          pipeline: pipeline,
+         layout_mapper: layout_mapper,
      }
 
 

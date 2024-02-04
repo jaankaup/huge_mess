@@ -14,7 +14,7 @@ use engine::bindgroups::{
     create_texture_sampler,
 };
 
-#[derive(Clone, Copy, Eq, Hash, PartialEq)]
+#[derive(Clone, Copy, Hash, PartialEq)]
 pub enum DefaultBindGroups {
     CameraUniform,
     LightUniform,
@@ -24,8 +24,11 @@ pub enum DefaultBindGroups {
     Texture2Sampler,
 }
 
+impl Eq for DefaultBindGroups {}
+
 /// Define basic render pipeline.
-pub fn default_render_shader_v4n4_camera_light_tex2(device: &wgpu::Device, sc_desc: &wgpu::SurfaceConfiguration) -> RenderPipelineWrapper {
+// pub fn default_render_shader_v4n4_camera_light_tex2<DefaultBindGroups>(device: &wgpu::Device, sc_desc: &wgpu::SurfaceConfiguration) -> RenderPipelineWrapper<DefaultBindGroups> {
+pub fn default_render_shader_v4n4_camera_light_tex2(device: &wgpu::Device, sc_desc: &wgpu::SurfaceConfiguration) -> RenderPipelineWrapper<DefaultBindGroups> {
 
      let vertex_attributes = vec![wgpu::VertexFormat::Float32x4, wgpu::VertexFormat::Float32x4];
       
@@ -111,10 +114,10 @@ pub fn default_render_shader_v4n4_camera_light_tex2(device: &wgpu::Device, sc_de
            targets: &binding,
        });
 
-    create_render_pipeline_wrapper(
+    create_render_pipeline_wrapper::<DefaultBindGroups>(
         device,
         sc_desc,
-        &layout_mapper,
+        layout_mapper,
         &wgsl_module,
         &vertex_attributes,
         wgpu::VertexStepMode::Vertex,
@@ -128,7 +131,7 @@ pub fn default_render_shader_v4n4_camera_light_tex2(device: &wgpu::Device, sc_de
 pub fn create_render_pipeline_wrapper<T: std::cmp::Eq + Hash + Copy>(
      device: &wgpu::Device,
      sc_desc: &wgpu::SurfaceConfiguration,
-     layout_mapper: &LayoutMapper<T>,
+     layout_mapper: LayoutMapper<T>,
      wgsl_module: &ShaderModule,
      vertex_attributes: &Vec<wgpu::VertexFormat>,
      vertex_step_mode: wgpu::VertexStepMode,
@@ -136,7 +139,7 @@ pub fn create_render_pipeline_wrapper<T: std::cmp::Eq + Hash + Copy>(
      primitive_state: &wgpu::PrimitiveState,
      depth_state: &Option<wgpu::DepthStencilState>,
      fragment_state: &Option<wgpu::FragmentState>,
-     multiview: Option<NonZeroU32>) -> RenderPipelineWrapper { 
+     multiview: Option<NonZeroU32>) -> RenderPipelineWrapper<T> { 
 
     // Create pipeline layout
     let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
@@ -154,15 +157,6 @@ pub fn create_render_pipeline_wrapper<T: std::cmp::Eq + Hash + Copy>(
         mask: !0,
         alpha_to_coverage_enabled: false,
     };
-
-    // Create vertex state for pipeline.
-    let mut vertex_state = VertexStateWrapper::init();     
-    vertex_state.create_vertex_wrapper(
-        stride,
-        wgpu::VertexStepMode::Vertex,
-        &attributes,
-        &wgsl_module,
-        "vs_main");
 
     RenderPipelineWrapper::init(
         device,
@@ -182,6 +176,7 @@ pub fn create_render_pipeline_wrapper<T: std::cmp::Eq + Hash + Copy>(
         multisample,
         &fragment_state,
         &multiview,
-        Some("Jeejee")
+        Some("Jeejee"),
+        layout_mapper,
     )
 }
