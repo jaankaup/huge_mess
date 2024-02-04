@@ -12,35 +12,12 @@ struct Light {
     attentuation_factor: f32,
 };
 
-struct RenderParams {
-    scale_factor: f32,
-};
-
-@group(0)
-@binding(0)
-var<uniform> camerauniform: Camera;
-
-@group(0) @binding(1)
-var<uniform> light: Light;
-
-@group(0) @binding(2)
-var<uniform> other_params: RenderParams;
-
-@group(1)
-@binding(0)
-var t_diffuse1: texture_2d<f32>;
-
-@group(1)
-@binding(1)
-var s_diffuse1: sampler;
-
-@group(1)
-@binding(2)
-var t_diffuse2: texture_2d<f32>;
-
-@group(1)
-@binding(3)
-var s_diffuse2: sampler;
+@group(0) @binding(0) var<uniform> camerauniform: Camera;
+@group(0) @binding(1) var<uniform> light: Light;
+@group(1) @binding(0) var t_diffuse1: texture_2d<f32>;
+@group(1) @binding(1) var s_diffuse1: sampler;
+@group(1) @binding(2) var t_diffuse2: texture_2d<f32>;
+@group(1) @binding(3) var s_diffuse2: sampler;
 
 fn rgb2hsv(c: vec3<f32>) -> vec3<f32> {
     let K = vec4<f32>(0.0, -1.0 / 3.0, 2.0 / 3.0, -1.0);
