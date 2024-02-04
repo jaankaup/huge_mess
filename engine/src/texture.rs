@@ -6,9 +6,10 @@ pub struct Texture {
     texture: Option<wgpu::Texture>,
     view: Option<wgpu::TextureView>,
     sampler: Option<wgpu::Sampler>,
-    width: u32,
-    height: u32,
-    depth: u32,
+    // DO we need these? TODO: remove if now used.
+    // width: u32,
+    // height: u32,
+    // depth: u32,
 }
 
     /// TODO: how to determine address_mode_x: a struct?
@@ -26,6 +27,7 @@ impl Texture {
 
         log::debug!("Creating depth texture");
 
+        // TODO: refactor if we do not need these.
         let width = sc_desc.width;
         let height = sc_desc.height;
         let depth = 1;
@@ -60,7 +62,8 @@ impl Texture {
             ..Default::default()
         });
 
-        Self { texture: Some(texture), view: Some(view), sampler: Some(sampler), width, height, depth }
+        Self { texture: Some(texture), view: Some(view), sampler: Some(sampler), } // width, height, depth }
+        // Self { texture: Some(texture), view: Some(view), sampler: Some(sampler), width, height, depth }
     }
 
     pub fn get_view(&self) -> &Option<wgpu::TextureView>  {

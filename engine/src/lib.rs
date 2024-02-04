@@ -9,3 +9,5 @@ pub mod misc;
 pub mod buffer;
 pub mod meshes;
 pub mod pipelines;
+pub mod default_things;
+pub mod vertex;
