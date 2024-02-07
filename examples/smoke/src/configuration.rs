@@ -32,6 +32,7 @@ impl WGPUFeatures for SmokeFeatures {
         limits.max_compute_workgroup_size_x = 1024;
         limits.max_push_constant_size = 4;
         limits.max_push_constant_size = 4;
+        limits.max_bind_groups = 6;
         }
 
         limits.max_storage_buffers_per_shader_stage = 10;

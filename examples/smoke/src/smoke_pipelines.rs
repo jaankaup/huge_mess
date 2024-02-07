@@ -1,3 +1,4 @@
+use core::fmt::Debug;
 use std::hash::Hash;
 use std::num::NonZeroU32;
 use wgpu::ShaderModule;
@@ -14,7 +15,7 @@ use engine::bindgroups::{
     create_texture_sampler,
 };
 
-#[derive(Clone, Copy, Hash, PartialEq)]
+#[derive(Clone, Copy, Hash, PartialEq, Eq, Debug)]
 pub enum DefaultBindGroups {
     CameraUniform,
     LightUniform,
@@ -24,10 +25,7 @@ pub enum DefaultBindGroups {
     Texture2Sampler,
 }
 
-impl Eq for DefaultBindGroups {}
-
 /// Define basic render pipeline.
-// pub fn default_render_shader_v4n4_camera_light_tex2<DefaultBindGroups>(device: &wgpu::Device, sc_desc: &wgpu::SurfaceConfiguration) -> RenderPipelineWrapper<DefaultBindGroups> {
 pub fn default_render_shader_v4n4_camera_light_tex2(device: &wgpu::Device, sc_desc: &wgpu::SurfaceConfiguration) -> RenderPipelineWrapper<DefaultBindGroups> {
 
      let vertex_attributes = vec![wgpu::VertexFormat::Float32x4, wgpu::VertexFormat::Float32x4];
@@ -35,34 +33,36 @@ pub fn default_render_shader_v4n4_camera_light_tex2(device: &wgpu::Device, sc_de
     let mut layout_mapper = LayoutMapper::init();
 
     // @group(0) @binding(0) var<uniform> camerauniform: Camera;
-    let _ = layout_mapper.add(&(0,0),
+    let a = layout_mapper.add(&(0,0),
                &create_uniform_bindgroup_layout(0, wgpu::ShaderStages::VERTEX | wgpu::ShaderStages::FRAGMENT),
-               &DefaultBindGroups::CameraUniform);
+               &DefaultBindGroups::CameraUniform).is_err();
 
     // @group(0) @binding(1) var<uniform> light: Light;
-    let _ = layout_mapper.add(&(1,0),
+    let b = layout_mapper.add(&(1,0),
                &create_uniform_bindgroup_layout(1, wgpu::ShaderStages::VERTEX | wgpu::ShaderStages::FRAGMENT),
-               &DefaultBindGroups::LightUniform);
+               &DefaultBindGroups::LightUniform).is_err();
 
     // @group(1) @binding(0) var t_diffuse1: texture_2d<f32>;
-    let _ = layout_mapper.add(&(0,1),
+    let c = layout_mapper.add(&(0,1),
                &create_texture(0, wgpu::ShaderStages::FRAGMENT),
-               &DefaultBindGroups::Texture1);
+               &DefaultBindGroups::Texture1).is_err();
 
     // @group(1) @binding(1) var s_diffuse1: sampler;
-    let _ = layout_mapper.add(&(1,1),
+    let d = layout_mapper.add(&(1,1),
                &create_texture_sampler(1, wgpu::ShaderStages::FRAGMENT),
-               &DefaultBindGroups::Texture1Sampler);
+               &DefaultBindGroups::Texture1Sampler).is_err();
 
     // @group(1) @binding(2) var t_diffuse2: texture_2d<f32>;
-    let _ = layout_mapper.add(&(2,1),
+    let e = layout_mapper.add(&(2,1),
                &create_texture(2, wgpu::ShaderStages::FRAGMENT),
-               &DefaultBindGroups::Texture2);
+               &DefaultBindGroups::Texture2).is_err();
 
     // @group(1) @binding(3) var s_diffuse2: sampler;
-    let _ = layout_mapper.add(&(3,1),
+    let f = layout_mapper.add(&(3,1),
                &create_texture_sampler(3, wgpu::ShaderStages::FRAGMENT),
-               &DefaultBindGroups::Texture2Sampler);
+               &DefaultBindGroups::Texture2Sampler).is_err();
+
+    println!("a = {:?}, b = {:?},  c = {:?},  d = {:?},  e = {:?},  f = {:?}", a, b, c, d, e, f);   
 
     // Create wgsl module.
     let wgsl_module = &device.create_shader_module(wgpu::ShaderModuleDescriptor {
@@ -128,7 +128,7 @@ pub fn default_render_shader_v4n4_camera_light_tex2(device: &wgpu::Device, sc_de
         None)
 }
 
-pub fn create_render_pipeline_wrapper<T: std::cmp::Eq + Hash + Copy>(
+pub fn create_render_pipeline_wrapper<T: std::cmp::Eq + Hash + Copy + Debug>(
      device: &wgpu::Device,
      sc_desc: &wgpu::SurfaceConfiguration,
      layout_mapper: LayoutMapper<T>,

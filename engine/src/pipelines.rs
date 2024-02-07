@@ -1,3 +1,4 @@
+use std::fmt::Debug;
 use std::num::NonZeroU32;
 use std::hash::Hash;
 use std::string::String;
@@ -5,7 +6,7 @@ use std::collections::HashMap;
 use wgpu::Label;
 // use wgpu::BindGroupLayoutEntry;
 
-pub type EntryLocation = (i32, i32);
+pub type EntryLocation = (u32, u32);
 
 /// A data structure that holds information about pipeline layout entries.
 /// Type T is type of key which can be used to access a layout entry.
@@ -32,19 +33,19 @@ pub type EntryLocation = (i32, i32);
 ///
 
 /// A struct that hold information about bind group layout entry and its location.
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 struct LayoutData {
     bind_group_layout_entry: wgpu::BindGroupLayoutEntry, 
     entry_location: EntryLocation,
 }
 
 /// TODO: documentation.
-pub struct LayoutMapper<T: std::cmp::Eq + Hash + Copy > {
+pub struct LayoutMapper<T: std::cmp::Eq + Hash + Copy + Debug > {
     layout_data: Vec<LayoutData>,
     mapping: HashMap<T, u32>, 
 }
  
-impl<T: std::cmp::Eq + Hash + Copy> LayoutMapper<T> { 
+impl<T: std::cmp::Eq + Hash + Copy + Debug> LayoutMapper<T> { 
     /// Initialize LayoutMapper object.
     pub fn init() -> Self {
         Self {
@@ -64,6 +65,7 @@ impl<T: std::cmp::Eq + Hash + Copy> LayoutMapper<T> {
                 entry_location: *entry_location }
             );
             let index = self.layout_data.len() - 1; 
+            println!("{:?} :: {:?} :: {:?}", entry_location, index, tag); 
             self.mapping.insert(*tag, index as u32);  
             Ok(())
         }
@@ -76,26 +78,53 @@ impl<T: std::cmp::Eq + Hash + Copy> LayoutMapper<T> {
     pub fn create_bind_group_layouts(&self, device: &wgpu::Device) -> Vec<wgpu::BindGroupLayout> {
 
         let mut bind_group_layouts: Vec<wgpu::BindGroupLayout> = Vec::with_capacity(self.layout_data.len());
+
+        // Add to groups. KAUPPINEN
+        let mut temp_map = HashMap::<u32, Vec<wgpu::BindGroupLayoutEntry>>::new();
+
         for e in self.layout_data.iter() {
+            if !temp_map.contains_key(&e.entry_location.1) {
+                temp_map.insert(e.entry_location.1, Vec::new());
+            }
+            println!("{:?}", e);
+            temp_map.get_mut(&e.entry_location.1).unwrap().push(e.bind_group_layout_entry);
+        }
+        println!("***************************************************");
+        println!("{:?}", temp_map);
+        println!("***************************************************");
+        println!("{:?}", temp_map.len());
+
+        for e in temp_map.into_values().collect::<Vec<_>>() { 
             bind_group_layouts.push(device.create_bind_group_layout(
                     &wgpu::BindGroupLayoutDescriptor {
-                        entries: &[e.bind_group_layout_entry],
+                        entries: &e,
                         label: None,
+                        // label: Some(&format!("entry {:?}", e.entry_location)[..]),
                     }
                     ));
         }
+
+        // for e in self.layout_data.iter() {
+        //     println!("{:?}", e);
+        //     bind_group_layouts.push(device.create_bind_group_layout(
+        //             &wgpu::BindGroupLayoutDescriptor {
+        //                 entries: &[e.bind_group_layout_entry],
+        //                 label: Some(&format!("entry {:?}", e.entry_location)[..]),
+        //             }
+        //             ));
+        // }
         bind_group_layouts
     }
 }
 
 
 /// A wrapper for render pipeline. Do we need a wrapper, or just a function? 
-pub struct RenderPipelineWrapper<T: std::cmp::Eq + Hash + Copy> {
+pub struct RenderPipelineWrapper<T: std::cmp::Eq + Hash + Copy + Debug> {
     pipeline: wgpu::RenderPipeline,
     layout_mapper: LayoutMapper<T>,
 }
 
-impl<T: std::cmp::Eq + Hash + Copy> RenderPipelineWrapper<T> {
+impl<T: std::cmp::Eq + Hash + Copy + Debug> RenderPipelineWrapper<T> {
     pub fn init(
             device: &wgpu::Device,
             layout: &wgpu::PipelineLayout,

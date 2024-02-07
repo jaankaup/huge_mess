@@ -1,3 +1,4 @@
+use engine::pipelines::RenderPipelineWrapper;
 use engine::texture::{
     Texture as Tex,
 };
@@ -7,7 +8,11 @@ use wgpu::TextureView;
 use engine::core::SurfaceWrapper;
 use engine::basic_loop::BasicLoop;
 use crate::configuration::SmokeFeatures;
-// use crate::smoke_pipelines::create_default_render_pipeline;
+use crate::smoke_pipelines::{
+    // create_default_render_pipeline,
+    DefaultBindGroups,
+    default_render_shader_v4n4_camera_light_tex2
+};
 use engine::core::run;
 
 use engine::core::WGPUContext;
@@ -24,6 +29,7 @@ struct SmokeApp {
     _depth_texture: Option<Tex>, 
     _camera: Camera,
     _buffer: wgpu::Buffer,
+    render_pipeline_wrapper: RenderPipelineWrapper<DefaultBindGroups>,
 }
 
 impl Application for SmokeApp {
@@ -44,11 +50,10 @@ impl Application for SmokeApp {
         camera.set_movement_sensitivity(0.2);
 
         Self {
-            _depth_texture: Some(Tex::create_depth_texture(context, surface.config(), None)),
-            // screen: ScreenTexture::init(&configuration.device, &configuration.sc_desc, true),
+            _depth_texture: Some(Tex::create_depth_texture(&context, surface.config(), None)),
             _camera: camera,
             _buffer: create_cube(&context.device, true),
-            // render: false,
+            render_pipeline_wrapper: default_render_shader_v4n4_camera_light_tex2(&context.device, &surface.config()),
         }
     }
 
