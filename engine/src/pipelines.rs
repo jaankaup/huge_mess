@@ -79,25 +79,32 @@ impl<T: std::cmp::Eq + Hash + Copy + Debug> LayoutMapper<T> {
 
         let mut bind_group_layouts: Vec<wgpu::BindGroupLayout> = Vec::with_capacity(self.layout_data.len());
 
-        // Add to groups. KAUPPINEN
+        // Add to groups.
         let mut temp_map = HashMap::<u32, Vec<wgpu::BindGroupLayoutEntry>>::new();
 
+        // Insert bindgroup layout entries to their corresponding groups.
         for e in self.layout_data.iter() {
-            if !temp_map.contains_key(&e.entry_location.1) {
-                temp_map.insert(e.entry_location.1, Vec::new());
-            }
+            (*temp_map.entry(e.entry_location.1).or_insert(Vec::new())).push(e.bind_group_layout_entry);
             println!("{:?}", e);
-            temp_map.get_mut(&e.entry_location.1).unwrap().push(e.bind_group_layout_entry);
         }
+
+        // Sort  
+        let mut temp_map_vec = temp_map.iter().collect::<Vec<_>>();
+        temp_map_vec.sort_by_key(|e| e.0);
+
+
+
+
+
         println!("***************************************************");
         println!("{:?}", temp_map);
         println!("***************************************************");
         println!("{:?}", temp_map.len());
 
-        for e in temp_map.into_values().collect::<Vec<_>>() { 
+        for e in temp_map_vec { //into_values().collect::<Vec<_>>() { 
             bind_group_layouts.push(device.create_bind_group_layout(
                     &wgpu::BindGroupLayoutDescriptor {
-                        entries: &e,
+                        entries: &e.1,
                         label: None,
                         // label: Some(&format!("entry {:?}", e.entry_location)[..]),
                     }
