@@ -1,3 +1,4 @@
+use wgpu::BindGroupLayout;
 use std::fmt::Debug;
 use std::num::NonZeroU32;
 use std::hash::Hash;
@@ -32,15 +33,12 @@ pub type EntryLocation = (u32, u32);
 ///
 ///
 
-
-
-
-pub struct BindGroupMapper<'a> {
+pub struct BindGroupMapper {
     bind_group_layout_entries: Vec<Vec<Option<wgpu::BindGroupLayoutEntry>>>,
-    bind_group_entries: Vec<Vec<wgpu::BindGroupEntry<'a>>>,
+    bind_group_layouts: Vec<wgpu::BindGroupLayout>,
 }
 
-impl BindGroupMapper<'_> {
+impl BindGroupMapper {
 
     pub fn init(device: &wgpu::Device) -> Self {
         let limits = device.limits();
@@ -51,16 +49,65 @@ impl BindGroupMapper<'_> {
 
         Self {
             bind_group_layout_entries: vec![vec![None ; bindings.try_into().unwrap()] ; bind_groups.try_into().unwrap()],
-            bind_group_entries: Vec::new(),
+            bind_group_layouts: Vec::with_capacity(40),
         }
     }
 
     pub fn insert(&mut self, device: &wgpu::Device, group_index: u32, bind_group_layout_entry: &wgpu::BindGroupLayoutEntry) {
+
         debug_assert!(group_index < device.limits().max_bind_groups); 
         debug_assert!(bind_group_layout_entry.binding < device.limits().max_bindings_per_bind_group); 
         debug_assert!(self.bind_group_layout_entries[group_index as usize][bind_group_layout_entry.binding as usize].is_none()); 
 
         self.bind_group_layout_entries[group_index as usize][bind_group_layout_entry.binding as usize] = Some(*bind_group_layout_entry);
+    }
+
+    pub fn build_bind_group_layouts(&mut self, device: &wgpu::Device) {
+
+        // TODO: validation for mapping => layout
+
+        self.bind_group_layouts.clear();
+
+        for x in self.bind_group_layout_entries.iter() {
+            let mut temp: Vec<wgpu::BindGroupLayoutEntry> = Vec::new();
+            for y in x.iter() {
+                if y.is_none() {
+                    break;
+                }
+                else {
+                    temp.push(y.unwrap());
+                }
+            }
+            if temp.len() > 0 {
+                self.bind_group_layouts.push(
+                    device.create_bind_group_layout(
+                        &wgpu::BindGroupLayoutDescriptor {
+                            entries: &temp,
+                            label: None,
+                        }
+                    )
+                );
+            }
+        }
+    }
+
+    /// Create bindgroups for group.
+    pub fn create_bind_group(&self, device: &wgpu::Device, resources: &Vec<wgpu::BindingResource>, group_index: usize) -> wgpu::BindGroup {
+
+        // Does the group exist?
+        debug_assert!(self.bind_group_layouts.len() < group_index);
+        debug_assert!(self.bind_group_layouts.len() == resources.len());
+
+        // Create entries.
+        let entries = resources.iter().enumerate().map(|(ind, res)| wgpu::BindGroupEntry { binding: ind as u32, resource: res.clone(), }).collect::<Vec<_>>(); 
+
+        device.create_bind_group(
+            &wgpu::BindGroupDescriptor {
+                label: None,
+                layout: &self.bind_group_layouts[group_index],
+                entries: &entries,
+            }
+        )
     }
 }
 
@@ -108,15 +155,6 @@ impl<T: std::cmp::Eq + Hash + Copy + Debug> LayoutMapper<T> {
     pub fn layout_entries(&self) -> Vec<wgpu::BindGroupLayoutEntry> {
         self.layout_data.clone().into_iter().map(|x| x.bind_group_layout_entry).collect()
     }
-
-    // pub fn add_resource(&self, device: &wgpu::Device, tag: &T, &wgpu::BindingResource ) -> wgpu::BindGroupEntry {
-    //     device.create_bind_group(
-    //         &wgpu::BindGroupDescriptor {
-    //             label: None,
-    //             layout: mapping.get(tag).unwrap() 
-    //         }
-    //         )
-    // }
 
     pub fn create_bind_group_layouts(&self, device: &wgpu::Device) -> Vec<wgpu::BindGroupLayout> {
 
