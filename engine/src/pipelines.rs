@@ -91,7 +91,12 @@ impl BindGroupMapper {
         }
     }
 
-    /// Create bindgroups for group.
+    pub fn get_bind_group_layouts(&self) -> &Vec<wgpu::BindGroupLayout> {
+        debug_assert!(self.bind_group_layouts.len() > 0);
+        &self.bind_group_layouts
+    }
+
+    /// Create a bind group for group.
     pub fn create_bind_group(&self, device: &wgpu::Device, resources: &Vec<wgpu::BindingResource>, group_index: usize) -> wgpu::BindGroup {
 
         // Does the group exist?
@@ -111,101 +116,15 @@ impl BindGroupMapper {
     }
 }
 
-/// A struct that hold information about bind group layout entry and its location.
-#[derive(Copy, Clone, Debug)]
-struct LayoutData {
-    bind_group_layout_entry: wgpu::BindGroupLayoutEntry, 
-    // bind_group_layout: wgpu::BindGroupLayout, // This is used to create BindGroup
-    entry_location: EntryLocation,
-}
-
-/// TODO: documentation.
-pub struct LayoutMapper<T: std::cmp::Eq + Hash + Copy + Debug > {
-    layout_data: Vec<LayoutData>,
-    mapping: HashMap<T, u32>, 
-}
- 
-impl<T: std::cmp::Eq + Hash + Copy + Debug> LayoutMapper<T> { 
-    /// Initialize LayoutMapper object.
-    pub fn init() -> Self {
-        Self {
-           layout_data: Vec::with_capacity(15),
-           mapping: HashMap::<T, u32>::with_capacity(15),
-        }
-    }
-
-    /// Add entry location, bind group layout entry and key (tag).
-    pub fn add(&mut self, entry_location: &EntryLocation, bind_group_layout_entry: &wgpu::BindGroupLayoutEntry, tag: &T) -> Result<(), String> {
-        if self.mapping.contains_key(tag) {
-            Err("Key already exists.".to_string()) 
-        }
-        // bind_group_entry Copy here?
-        else {
-            self.layout_data.push(LayoutData {
-                bind_group_layout_entry: *bind_group_layout_entry,
-                entry_location: *entry_location }
-            );
-            let index = self.layout_data.len() - 1; 
-            println!("{:?} :: {:?} :: {:?}", entry_location, index, tag); 
-            self.mapping.insert(*tag, index as u32);  
-            Ok(())
-        }
-    }
-
-    pub fn layout_entries(&self) -> Vec<wgpu::BindGroupLayoutEntry> {
-        self.layout_data.clone().into_iter().map(|x| x.bind_group_layout_entry).collect()
-    }
-
-    pub fn create_bind_group_layouts(&self, device: &wgpu::Device) -> Vec<wgpu::BindGroupLayout> {
-
-        let mut bind_group_layouts: Vec<wgpu::BindGroupLayout> = Vec::with_capacity(self.layout_data.len());
-
-        // Add to groups.
-        let mut temp_map = HashMap::<u32, Vec<wgpu::BindGroupLayoutEntry>>::new();
-
-        // Insert bindgroup layout entries to their corresponding groups.
-        for e in self.layout_data.iter() {
-            (*temp_map.entry(e.entry_location.1).or_insert(Vec::new())).push(e.bind_group_layout_entry);
-            println!("{:?}", e);
-        }
-
-        // Sort  
-        let mut temp_map_vec = temp_map.clone().into_iter().collect::<Vec<_>>();
-        temp_map_vec.sort_by_key(|e| e.0);
-
-        for (_, e) in temp_map_vec.iter_mut() {
-            e.sort_by_key(|x| x.binding);
-        }
-
-        println!("***************************************************");
-        println!("{:?}", temp_map);
-        println!("***************************************************");
-        println!("{:?}", temp_map.len());
-
-        for e in temp_map_vec { //into_values().collect::<Vec<_>>() { 
-            bind_group_layouts.push(device.create_bind_group_layout(
-                    &wgpu::BindGroupLayoutDescriptor {
-                        entries: &e.1,
-                        label: None,
-                    }
-                    ));
-        }
-
-        // Create bindgroup layout entries too.
-         
-
-
-        bind_group_layouts
-    }
-}
-
 /// A wrapper for render pipeline. Do we need a wrapper, or just a function? 
-pub struct RenderPipelineWrapper<T: std::cmp::Eq + Hash + Copy + Debug> {
+//pub struct RenderPipelineWrapper<T: std::cmp::Eq + Hash + Copy + Debug> {
+pub struct RenderPipelineWrapper {
     pipeline: wgpu::RenderPipeline,
-    layout_mapper: LayoutMapper<T>,
+    layout_mapper: BindGroupMapper,
 }
 
-impl<T: std::cmp::Eq + Hash + Copy + Debug> RenderPipelineWrapper<T> {
+// impl<T: std::cmp::Eq + Hash + Copy + Debug> RenderPipelineWrapper<T> {
+impl RenderPipelineWrapper {
     pub fn init(
             device: &wgpu::Device,
             layout: &wgpu::PipelineLayout,
@@ -216,7 +135,7 @@ impl<T: std::cmp::Eq + Hash + Copy + Debug> RenderPipelineWrapper<T> {
             fragment_state: &Option<wgpu::FragmentState>,
             multiview: &Option<NonZeroU32>,
             label: Label,
-            layout_mapper: LayoutMapper<T>
+            bind_group_mapper: BindGroupMapper
             ) -> Self {
 
      // Create the render pipeline.
@@ -233,7 +152,7 @@ impl<T: std::cmp::Eq + Hash + Copy + Debug> RenderPipelineWrapper<T> {
 
      Self {
          pipeline: pipeline,
-         layout_mapper: layout_mapper,
+         layout_mapper: bind_group_mapper,
      }
 
 

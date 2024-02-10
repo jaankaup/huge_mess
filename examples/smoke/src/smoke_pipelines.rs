@@ -5,8 +5,8 @@ use wgpu::ShaderModule;
 use std::borrow::Cow;
 use engine::default_things::VertexStateWrapper;
 use engine::pipelines::{
-    LayoutMapper,
     RenderPipelineWrapper,
+    BindGroupMapper
 };
 use engine::vertex::create_vertex_attributes;
 use engine::bindgroups::{
@@ -26,43 +26,18 @@ pub enum DefaultBindGroups {
 }
 
 /// Define basic render pipeline.
-pub fn default_render_shader_v4n4_camera_light_tex2(device: &wgpu::Device, sc_desc: &wgpu::SurfaceConfiguration) -> RenderPipelineWrapper<DefaultBindGroups> {
+pub fn default_render_shader_v4n4_camera_light_tex2(device: &wgpu::Device, sc_desc: &wgpu::SurfaceConfiguration) -> RenderPipelineWrapper {
 
-     let vertex_attributes = vec![wgpu::VertexFormat::Float32x4, wgpu::VertexFormat::Float32x4];
+    let vertex_attributes = vec![wgpu::VertexFormat::Float32x4, wgpu::VertexFormat::Float32x4];
       
-    let mut layout_mapper = LayoutMapper::init();
-
-    // @group(0) @binding(0) var<uniform> camerauniform: Camera;
-    let a = layout_mapper.add(&(0,0),
-               &create_uniform_bindgroup_layout(0, wgpu::ShaderStages::VERTEX | wgpu::ShaderStages::FRAGMENT),
-               &DefaultBindGroups::CameraUniform).is_err();
-
-    // @group(0) @binding(1) var<uniform> light: Light;
-    let b = layout_mapper.add(&(1,0),
-               &create_uniform_bindgroup_layout(1, wgpu::ShaderStages::VERTEX | wgpu::ShaderStages::FRAGMENT),
-               &DefaultBindGroups::LightUniform).is_err();
-
-    // @group(1) @binding(0) var t_diffuse1: texture_2d<f32>;
-    let c = layout_mapper.add(&(0,1),
-               &create_texture(0, wgpu::ShaderStages::FRAGMENT),
-               &DefaultBindGroups::Texture1).is_err();
-
-    // @group(1) @binding(1) var s_diffuse1: sampler;
-    let d = layout_mapper.add(&(1,1),
-               &create_texture_sampler(1, wgpu::ShaderStages::FRAGMENT),
-               &DefaultBindGroups::Texture1Sampler).is_err();
-
-    // @group(1) @binding(2) var t_diffuse2: texture_2d<f32>;
-    let e = layout_mapper.add(&(2,1),
-               &create_texture(2, wgpu::ShaderStages::FRAGMENT),
-               &DefaultBindGroups::Texture2).is_err();
-
-    // @group(1) @binding(3) var s_diffuse2: sampler;
-    let f = layout_mapper.add(&(3,1),
-               &create_texture_sampler(3, wgpu::ShaderStages::FRAGMENT),
-               &DefaultBindGroups::Texture2Sampler).is_err();
-
-    println!("a = {:?}, b = {:?},  c = {:?},  d = {:?},  e = {:?},  f = {:?}", a, b, c, d, e, f);   
+    let mut bind_group_mapper = BindGroupMapper::init(device);
+    bind_group_mapper.insert(device, 0, &create_uniform_bindgroup_layout(0, wgpu::ShaderStages::VERTEX | wgpu::ShaderStages::FRAGMENT));
+    bind_group_mapper.insert(device, 0, &create_uniform_bindgroup_layout(1, wgpu::ShaderStages::VERTEX | wgpu::ShaderStages::FRAGMENT));
+    bind_group_mapper.insert(device, 1, &create_texture(0, wgpu::ShaderStages::FRAGMENT));
+    bind_group_mapper.insert(device, 1, &create_texture_sampler(1, wgpu::ShaderStages::FRAGMENT));
+    bind_group_mapper.insert(device, 1, &create_texture(2, wgpu::ShaderStages::FRAGMENT));
+    bind_group_mapper.insert(device, 1, &create_texture_sampler(3, wgpu::ShaderStages::FRAGMENT));
+    bind_group_mapper.build_bind_group_layouts(device);
 
     // Create wgsl module.
     let wgsl_module = &device.create_shader_module(wgpu::ShaderModuleDescriptor {
@@ -114,10 +89,10 @@ pub fn default_render_shader_v4n4_camera_light_tex2(device: &wgpu::Device, sc_de
            targets: &binding,
        });
 
-    create_render_pipeline_wrapper::<DefaultBindGroups>(
+    create_render_pipeline_wrapper(
         device,
         sc_desc,
-        layout_mapper,
+        bind_group_mapper,
         &wgsl_module,
         &vertex_attributes,
         wgpu::VertexStepMode::Vertex,
@@ -128,10 +103,10 @@ pub fn default_render_shader_v4n4_camera_light_tex2(device: &wgpu::Device, sc_de
         None)
 }
 
-pub fn create_render_pipeline_wrapper<T: std::cmp::Eq + Hash + Copy + Debug>(
+pub fn create_render_pipeline_wrapper(
      device: &wgpu::Device,
      sc_desc: &wgpu::SurfaceConfiguration,
-     layout_mapper: LayoutMapper<T>,
+     bind_group_mapper: BindGroupMapper,
      wgsl_module: &ShaderModule,
      vertex_attributes: &Vec<wgpu::VertexFormat>,
      vertex_step_mode: wgpu::VertexStepMode,
@@ -139,12 +114,12 @@ pub fn create_render_pipeline_wrapper<T: std::cmp::Eq + Hash + Copy + Debug>(
      primitive_state: &wgpu::PrimitiveState,
      depth_state: &Option<wgpu::DepthStencilState>,
      fragment_state: &Option<wgpu::FragmentState>,
-     multiview: Option<NonZeroU32>) -> RenderPipelineWrapper<T> { 
+     multiview: Option<NonZeroU32>) -> RenderPipelineWrapper { 
 
     // Create pipeline layout
     let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
         label: Some("Default pipeline layout"),
-        bind_group_layouts: &layout_mapper.create_bind_group_layouts(device).iter().collect::<Vec<_>>(),
+        bind_group_layouts: &bind_group_mapper.get_bind_group_layouts().iter().collect::<Vec<_>>(),
         push_constant_ranges: &[],
     });
 
@@ -177,6 +152,6 @@ pub fn create_render_pipeline_wrapper<T: std::cmp::Eq + Hash + Copy + Debug>(
         &fragment_state,
         &multiview,
         Some("Jeejee"),
-        layout_mapper,
+        bind_group_mapper,
     )
 }

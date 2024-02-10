@@ -29,7 +29,8 @@ struct SmokeApp {
     _depth_texture: Option<Tex>, 
     _camera: Camera,
     _buffer: wgpu::Buffer,
-    render_pipeline_wrapper: RenderPipelineWrapper<DefaultBindGroups>,
+    render_pipeline_wrapper: RenderPipelineWrapper,
+    // render_pipeline_wrapper: RenderPipelineWrapper<DefaultBindGroups>,
 }
 
 impl Application for SmokeApp {
