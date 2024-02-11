@@ -227,7 +227,7 @@ impl InputCache {
 
     /// Get the difference between the current and previous mouse position.
     pub fn get_mouse_delta(&self) -> PhysicalPosition::<f64> {
-        if self.mouse_moved { self.mouse_delta }
+        if self.mouse_moved { log::info!("Mouse moved {:?}", self.mouse_delta); self.mouse_delta }
         else { PhysicalPosition::<f64>::new(0.0, 0.0) }
     }
 
@@ -348,7 +348,6 @@ impl InputCache {
     }
     /// Update the state of mouse movement.
     fn track_cursor_movement(&mut self, new_pos: PhysicalPosition<f64>) {
-        // log::info!("mouse movement {:?}", new_pos);
         self.mouse_moved = true;
         match self.mouse_position.pos {
             None => { self.mouse_position.pos = Some(new_pos);

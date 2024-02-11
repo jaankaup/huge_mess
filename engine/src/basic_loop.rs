@@ -47,7 +47,6 @@ impl Loop for BasicLoop {
 
                 target.set_control_flow(ControlFlow::Poll);
                 // target.set_control_flow(ControlFlow::Wait);
-                input_cache.pre_update();
 
                 match event {
                     ref e if SurfaceWrapper::start_condition(e) => {
@@ -61,6 +60,10 @@ impl Loop for BasicLoop {
                                     ));
                         }
                     }
+                    Event::NewEvents(..) => {
+                        log::info!("NEW EVENTS ARRIVED::::::");
+                        input_cache.pre_update();
+                    },
                     Event::Suspended => {
                         surface.suspend();
                     }

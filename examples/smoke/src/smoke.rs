@@ -50,11 +50,11 @@ impl Application for SmokeApp {
         // Create camera.
         let mut camera = Camera::new(surface.config().width as f32,
                                      surface.config().height as f32,
-                                     (2.0, 2.0, 4.0),
+                                     (5.0, 2.0, 8.0),
                                      (0.0, 0.0, 0.0)
         );
-        camera.set_rotation_sensitivity(10.4);
-        camera.set_movement_sensitivity(10.2);
+        camera.set_rotation_sensitivity(1.0);
+        camera.set_movement_sensitivity(0.1);
 
         log::info!("Creating light.");
 
@@ -150,7 +150,7 @@ impl Application for SmokeApp {
     /// Application update.
     fn update(&mut self, context: &WGPUContext, input_cache: &InputCache) {
         self.camera.update_from_input(&context.queue, &input_cache);
-        log::info!("{:?}", self.camera.get_view());
+        // log::info!("{:?}", self.camera.get_view());
         // log::info!("{:?}", self.camera.get_position());
     }
 

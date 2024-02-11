@@ -309,9 +309,10 @@ impl Camera {
         // If left mouse is down update pitch, yaw and view.
         if let Some(InputState::Down(_,_)) = left_mouse_button {
 
+            log::info!("md = {:?}", md);
             self.pitch = clamp(
                 self.pitch + (self.rotation_sensitivity * (md.y * (-1.0)) as f32),
-                -89.0,89.0);
+                -80.0,80.0);
             self.yaw += self.rotation_sensitivity * md.x as f32 ;
 
             self.view = Vector3::new(
@@ -325,7 +326,7 @@ impl Camera {
         // TODO: refactor.
         self.update_camera(queue);
         self.update_ray_camera(queue);
-        // log::info!("pos = {:?} view = {:?}", self.pos, self.view);
+        log::info!("pos = {:?} view = {:?}", self.pos, self.view);
     }
 
     fn update_camera(&self, queue: &wgpu::Queue) {
