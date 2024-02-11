@@ -145,9 +145,30 @@ impl RenderPipelineWrapper {
 /// A wrapper for render pipeline.
 /// Stores the pipeline. The wrapper can be used to create bind groups for this pipeline.
 pub struct ComputePipelineWrapper {
-
+    pipeline: wgpu::ComputePipeline,
+    layout_mapper: BindGroupMapper,
 }
 
 impl ComputePipelineWrapper {
 
+    pub fn init(
+        device: &wgpu::Device,
+        layout: &wgpu::PipelineLayout,
+        module: &wgpu::ShaderModule,
+        entry_point: &str,
+        layout_mapper: BindGroupMapper,
+        label: Option<&str>) -> Self {
+
+        let pipeline = device.create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
+            label: label,
+            layout: Some(&layout),
+            module: &module,
+            entry_point: entry_point //"main",
+        });
+
+        Self {
+            pipeline,
+            layout_mapper,
+        }
+    }
 }
