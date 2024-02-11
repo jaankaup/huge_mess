@@ -269,6 +269,8 @@ impl Camera {
         if state_up.is_some() { movement += movement_factor * time_delta_milli_f32 * self.up; }
         if state_down.is_some() { movement -= movement_factor * time_delta_milli_f32 * self.up; }
 
+        // log::info!("movement = {:?}", movement);
+
         let new_pos = self.movement_sensitivity * movement + self.pos;
         // Update the camera position.
         if self.restriction_area_enabled &&
@@ -308,6 +310,7 @@ impl Camera {
         // TODO: refactor.
         self.update_camera(queue);
         self.update_ray_camera(queue);
+        log::info!("pos = {:?} view = {:?}", self.pos, self.view);
     }
 
     fn update_camera(&self, queue: &wgpu::Queue) {

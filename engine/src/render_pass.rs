@@ -6,7 +6,8 @@ use crate::texture::Texture as Tex;
 /// TODO: create a RenderPayload struct to pass in?
 pub fn create_render_pass<'a>(encoder: &'a mut wgpu::CommandEncoder,
                           view: &'a wgpu::TextureView,
-                          depth_texture: &'a Option<Tex>,
+                          // depth_texture: &'a Option<Tex>,
+                          depth_texture: Option<&'a Tex>,
                           clear: bool,
                           clear_color: &Option<wgpu::Color>,
                           label: &Option<Label>) -> impl wgpu::util::RenderEncoder<'a> {

@@ -9,9 +9,9 @@ use crate::core::{
 
 use winit::{
     event::{Event, KeyEvent, /* StartCause, */ WindowEvent},
-    event_loop::{EventLoop, EventLoopWindowTarget}, //, ControlFlow},
+    event_loop::{EventLoop, EventLoopWindowTarget, ControlFlow},
     keyboard::{Key, NamedKey},
-};
+    };
 
 /// A "basic" loop.
 pub struct BasicLoop { }
@@ -45,8 +45,9 @@ impl Loop for BasicLoop {
             window_loop.event_loop,
             move |event: Event<()>, target: &EventLoopWindowTarget<()>| {
 
-                // target.set_control_flow(ControlFlow::Poll);
+                target.set_control_flow(ControlFlow::Poll);
                 // target.set_control_flow(ControlFlow::Wait);
+                input_cache.pre_update();
 
                 match event {
                     ref e if SurfaceWrapper::start_condition(e) => {
@@ -55,81 +56,87 @@ impl Loop for BasicLoop {
                         // If we haven't created the example yet, do so now.
                         if application.is_none() {
                             application = Some(A::init(
-                                &context,
-                                &surface,
-                            ));
+                                    &context,
+                                    &surface,
+                                    ));
                         }
                     }
                     Event::Suspended => {
                         surface.suspend();
                     }
-                    Event::WindowEvent { event, .. } => match event {
-                        WindowEvent::Resized(size) => {
-                            surface.resize(&context, size);
-                            application.as_mut().unwrap().resize(
-                                &context,
-                                surface.config(),
-                                size
-                            );
+                    Event::WindowEvent { event, .. } => {
+                        input_cache.update(&event);
+                        match event {
+                            WindowEvent::Resized(size) => {
+                                surface.resize(&context, size);
+                                application.as_mut().unwrap().resize(
+                                    &context,
+                                    surface.config(),
+                                    size
+                                    );
 
-                            window_loop.window.request_redraw();
-                        }
-                        WindowEvent::KeyboardInput {
-                            event:
-                                KeyEvent {
-                                    logical_key: Key::Named(NamedKey::Escape),
-                                    ..
-                                },
-                            ..
-                        }
-                        | WindowEvent::CloseRequested => {
-                            target.exit();
-                        }
-                        #[cfg(not(target_arch = "wasm32"))]
-                        WindowEvent::KeyboardInput {
-                            event:
-                                KeyEvent {
-                                    logical_key: Key::Character(s),
-                                    ..
-                                },
-                            ..
-                        } if s == "r" => {
-                            println!("{:#?}", context.instance.generate_report());
-                        }
-                        WindowEvent::RedrawRequested => {
-                            // On MacOS, currently redraw requested comes in _before_ Init does.
-                            // If this happens, just drop the requested redraw on the floor.
-                            //
-                            // See https://github.com/rust-windowing/winit/issues/3235 for some discussion
-                            if application.is_none() {
-                                return;
+                                window_loop.window.request_redraw();
                             }
+                            WindowEvent::KeyboardInput {
+                                event:
+                                    KeyEvent {
+                                        logical_key: Key::Named(NamedKey::Escape),
+                                        ..
+                                    },
+                                    ..
+                            }
+                            | WindowEvent::CloseRequested => {
+                                target.exit();
+                            }
+                            #[cfg(not(target_arch = "wasm32"))]
+                            WindowEvent::KeyboardInput { event, .. } =>  {  
+                                // event:
+                                //     KeyEvent {
+                                //         logical_key: Key::Character(s),
+                                //         ..
+                                //     },
+                                // ..
 
-                            // frame_counter.update();
+                            }, //if s == "r" => {
+                               //println!("{:#?}", context.instance.generate_report());
+                               // }
 
-                            let frame = surface.acquire(&context);
-                            let view = frame.texture.create_view(&wgpu::TextureViewDescriptor {
-                                format: Some(surface.config().view_formats[0]),
-                                ..wgpu::TextureViewDescriptor::default()
-                            });
+                            WindowEvent::RedrawRequested => {
+                                // On MacOS, currently redraw requested comes in _before_ Init does.
+                                // If this happens, just drop the requested redraw on the floor.
+                                //
+                                // See https://github.com/rust-windowing/winit/issues/3235 for some discussion
+                                if application.is_none() {
+                                    return;
+                                }
 
-                            application
-                                .as_mut()
-                                .unwrap()
-                                .render(&context, &view, &surface);
+                                // frame_counter.update();
 
-                            frame.present();
+                                let frame = surface.acquire(&context);
+                                let view = frame.texture.create_view(&wgpu::TextureViewDescriptor {
+                                    format: Some(surface.config().view_formats[0]),
+                                    ..wgpu::TextureViewDescriptor::default()
+                                });
 
-                            window_loop.window.request_redraw();
-                        }
-                        _ => {
-                            input_cache.update(&event);
-                            application.as_mut().unwrap().update(&context, &input_cache ); // Input cache
-                        },
-                    },
-                    _ => {}
-                }
-            },
+                                application.as_mut().unwrap().update(&context, &input_cache ); // Input cache
+                                application
+                                    .as_mut()
+                                    .unwrap()
+                                    .render(&context, &view, &surface);
+
+                                frame.present();
+
+                                window_loop.window.request_redraw();
+                            }
+                            _ => {
+                                // log::info!("{:?}", event);
+                                // application.as_mut().unwrap().update(&context, &input_cache ); // Input cache
+                            },
+                        } // match event
+                    }, // Event::WindowsEvent
+                       _ => {}
+                } // match event 
+            }, // move
         );
     }
 }

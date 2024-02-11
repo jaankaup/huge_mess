@@ -316,23 +316,29 @@ impl InputCache {
     /// Update the state of keyboard.
     fn track_keyboard(&mut self, evt: KeyEv) {
         //let key = evt.logical_key; // {
+        log::info!("keyboardi");
+        println!("{:?}", evt);
         match evt.physical_key {
             PhysicalKey::Code(key_code) => 
                 match self.keyboard.get_mut(&key_code) {
                     Some(state) => {
                         // Update the key time value.
+                        log::info!("updating key {:?}", evt);
                         let _debug_state = state.update(&evt.state, self.time_now);
+                        log::info!("debug_state ::: {:?}", _debug_state);
                     },
                     None => {
+                        log::info!("inserting key {:?}", evt);
                         // The key doesn't have any state. Add a new pressed state for this key.
                         let _ = self.keyboard.insert(key_code, InputState::Pressed(self.time_now));
                     }
                 },
-                _ => {}
+                _ => { log::info!("Ei prkl!!!!!!!!!!!!!!"); }
         }
     }
     /// Update the state of mouse buttons.
     fn track_mouse_button(&mut self, button: ev::MouseButton, state: ev::ElementState) {
+        log::info!("mouse button {:?}", button);
         self.mouse_buttons.update(&button, &state, self.time_now);
     }
     /// Update the state of mouse wheel.
@@ -341,6 +347,7 @@ impl InputCache {
     }
     /// Update the state of mouse movement.
     fn track_cursor_movement(&mut self, new_pos: PhysicalPosition<f64>) {
+        // log::info!("mouse movement {:?}", new_pos);
         self.mouse_moved = true;
         match self.mouse_position.pos {
             None => { self.mouse_position.pos = Some(new_pos);
@@ -383,11 +390,13 @@ impl KeyboardManager {
     }
 
     pub fn register_key(&mut self, key: Key, threshold: f64) {
+        log::info!("Register keys");
         self.keys.insert(key, (0.0, threshold)); 
     }
 
     pub fn test_key(&mut self, key: &Key, input: &InputCache) -> bool {
         
+        log::info!("TRACKING KEYSTATE!!!!");
         let state_key = input.key_state(key);
         let mut result = false;
 

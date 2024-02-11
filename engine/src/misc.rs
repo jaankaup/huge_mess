@@ -1,5 +1,3 @@
-// use bytemuck::{Pod, Zeroable};
-
 /// A trait for types that can be copied from wgpu::buffer buffer to
 /// a std::Vec. // TODO: check if there is already an implementation for this.
 pub trait Convert2Vec where Self: std::marker::Sized {

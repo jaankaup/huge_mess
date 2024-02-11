@@ -1019,6 +1019,7 @@ dependencies = [
  "instant",
  "js-sys",
  "log",
+ "png",
  "pollster",
  "raw-window-handle 0.6.0",
  "wasm-bindgen",

@@ -25,7 +25,7 @@ pub enum DefaultBindGroups {
     Texture2Sampler,
 }
 
-/// Define basic render pipeline.
+/// Define basic render pipeline. TODO: Refactor pipeline creation.
 pub fn default_render_shader_v4n4_camera_light_tex2(device: &wgpu::Device, sc_desc: &wgpu::SurfaceConfiguration) -> RenderPipelineWrapper {
 
     let vertex_attributes = vec![wgpu::VertexFormat::Float32x4, wgpu::VertexFormat::Float32x4];
