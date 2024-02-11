@@ -39,6 +39,7 @@ env_logger = "0.10"
 pollster = "0.3"
 instant = { version = "0.1.12", features = ["wasm-bindgen"] }
 cgmath = { version = "0.18.0"}
+libm = { version = "0.2.8"}
 
 # wasm32 dependencies
 console_error_panic_hook = "0.1.7"

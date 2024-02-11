@@ -316,8 +316,8 @@ impl InputCache {
     /// Update the state of keyboard.
     fn track_keyboard(&mut self, evt: KeyEv) {
         //let key = evt.logical_key; // {
-        log::info!("keyboardi");
-        println!("{:?}", evt);
+        // log::info!("keyboardi");
+        
         match evt.physical_key {
             PhysicalKey::Code(key_code) => 
                 match self.keyboard.get_mut(&key_code) {
@@ -333,7 +333,8 @@ impl InputCache {
                         let _ = self.keyboard.insert(key_code, InputState::Pressed(self.time_now));
                     }
                 },
-                _ => { log::info!("Ei prkl!!!!!!!!!!!!!!"); }
+                _ => { log::info!("Ei prkl!!!!!!!!!!!!!!"); },
+            _ => {println!("{:?}", evt);}
         }
     }
     /// Update the state of mouse buttons.

@@ -1,5 +1,7 @@
 // use cgmath::Vector3;
 // use crate::misc::clamp;
+use libm::asin;
+use libm::atan2;
 use crate::input_cache::{InputCache, InputState};
 use crate::buffer::buffer_from_data;
 use cgmath::{prelude::*, Vector3, Vector4, Point3};
@@ -186,14 +188,27 @@ impl Camera {
     }
 
     /// TODO: something better.
-    pub fn new(aspect_width: f32, aspect_height: f32, start_position: (f32, f32, f32), yaw: f32, pitch: f32) -> Self {
+    pub fn new(aspect_width: f32, aspect_height: f32, start_position: (f32, f32, f32), look_at_position: (f32, f32, f32)) -> Self {
 
         assert!(aspect_height > 0.0, "Height must be > 0.");
         assert!(aspect_width > 0.0, "Width must be > 0.");
 
-        let pitch = clamp(
-            pitch,
-            -89.0,89.0);
+        // let pitch = clamp(
+        //     pitch,
+        //     -89.0,89.0);
+
+        
+        // let view = Vector3::new(
+        //     pitch.to_radians().cos() * yaw.to_radians().cos(),
+        //     pitch.to_radians().sin(),
+        //     pitch.to_radians().cos() * yaw.to_radians().sin()
+        // ).normalize_to(1.0);
+
+        // let view: cgmath::Vector3<f32> = cgmath::look_at(cgmath::Vector3::<f32>::new(yaw, pitch, 0.5), cgmath::Vector3::<f32>::new(0.0, 1.0, 0.0));
+
+        let dir = cgmath::Vector3::<f32>::new(start_position.0 - look_at_position.0, start_position.1 - look_at_position.1, start_position.2 - look_at_position.2).normalize_to(1.0);
+        let pitch = asin(dir.y as f64) as f32;
+        let yaw = atan2(dir.x as f64, dir.z as f64) as f32;
 
         let view = Vector3::new(
             pitch.to_radians().cos() * yaw.to_radians().cos(),
@@ -253,7 +268,7 @@ impl Camera {
         let time_delta_milli_f32 = time_delta_nanos as f32 / 1000000.0;
 
         // The right vector.
-        let right = self.view.cross(self.up);
+        let right = self.view.cross(self.up).normalize_to(1.0);
 
         let mut movement = cgmath::Vector3::new(0.0, 0.0, 0.0);
 
@@ -310,7 +325,7 @@ impl Camera {
         // TODO: refactor.
         self.update_camera(queue);
         self.update_ray_camera(queue);
-        log::info!("pos = {:?} view = {:?}", self.pos, self.view);
+        // log::info!("pos = {:?} view = {:?}", self.pos, self.view);
     }
 
     fn update_camera(&self, queue: &wgpu::Queue) {
