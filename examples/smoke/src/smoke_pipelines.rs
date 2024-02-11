@@ -15,15 +15,15 @@ use engine::bindgroups::{
     create_texture_sampler,
 };
 
-#[derive(Clone, Copy, Hash, PartialEq, Eq, Debug)]
-pub enum DefaultBindGroups {
-    CameraUniform,
-    LightUniform,
-    Texture1,
-    Texture1Sampler,
-    Texture2,
-    Texture2Sampler,
-}
+// #[derive(Clone, Copy, Hash, PartialEq, Eq, Debug)]
+// pub enum DefaultBindGroups {
+//     CameraUniform,
+//     LightUniform,
+//     Texture1,
+//     Texture1Sampler,
+//     Texture2,
+//     Texture2Sampler,
+// }
 
 /// Define basic render pipeline. TODO: Refactor pipeline creation.
 pub fn default_render_shader_v4n4_camera_light_tex2(device: &wgpu::Device, sc_desc: &wgpu::SurfaceConfiguration) -> RenderPipelineWrapper {
@@ -105,7 +105,7 @@ pub fn default_render_shader_v4n4_camera_light_tex2(device: &wgpu::Device, sc_de
 
 pub fn create_render_pipeline_wrapper(
      device: &wgpu::Device,
-     sc_desc: &wgpu::SurfaceConfiguration,
+     sc_desc: &wgpu::SurfaceConfiguration, // NOT USED. Should we remove this?
      bind_group_mapper: BindGroupMapper,
      wgsl_module: &ShaderModule,
      vertex_attributes: &Vec<wgpu::VertexFormat>,

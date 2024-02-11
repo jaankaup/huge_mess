@@ -5,34 +5,8 @@ use std::hash::Hash;
 use std::string::String;
 use std::collections::HashMap;
 use wgpu::Label;
-// use wgpu::BindGroupLayoutEntry;
 
-pub type EntryLocation = (u32, u32);
-
-/// A data structure that holds information about pipeline layout entries.
-/// Type T is type of key which can be used to access a layout entry.
-///
-/// Example usage:
-///
-/// enum MyShaderLayout { 
-///     CameraUniformLayout,
-///     DirectionalLightUniform,
-///     TerrainDiffuseTexture,
-///     TerrainDiffuseSampler,
-///     WaterDiffuseTexture,
-///     WaterDiffuseSampler,
-/// }
-/// let entries = LayoutEntries<MyShaderLayout>::init();
-///
-/// entries.insert(EntryLocation(0,0),
-///                create_uniform_bindgroup_layout(0, wgpu::ShaderStages::VERTEX | wgpu::ShaderStages::FRAGMENT),
-///                MyShaderLayout::CameraUniformLayout);
-///
-///
-///
-///
-///
-
+/// Struct for bindgroup entries and layouts.
 pub struct BindGroupMapper {
     bind_group_layout_entries: Vec<Vec<Option<wgpu::BindGroupLayoutEntry>>>,
     bind_group_layouts: Vec<wgpu::BindGroupLayout>,
@@ -53,6 +27,7 @@ impl BindGroupMapper {
         }
     }
 
+    /// Add bind group entry to a group location.
     pub fn insert(&mut self, device: &wgpu::Device, group_index: u32, bind_group_layout_entry: &wgpu::BindGroupLayoutEntry) {
 
         debug_assert!(group_index < device.limits().max_bind_groups); 
@@ -62,6 +37,8 @@ impl BindGroupMapper {
         self.bind_group_layout_entries[group_index as usize][bind_group_layout_entry.binding as usize] = Some(*bind_group_layout_entry);
     }
 
+    /// When all bind group entries has been added, this function can be used to create bind group
+    /// layouts.
     pub fn build_bind_group_layouts(&mut self, device: &wgpu::Device) {
 
         // TODO: validation for mapping => layout
@@ -96,16 +73,13 @@ impl BindGroupMapper {
         &self.bind_group_layouts
     }
 
-    /// Create a bind group for group.
+    /// Create a bind group for group. The layouts must be created before calling this function.
     pub fn create_bind_group(&self, device: &wgpu::Device, resources: &Vec<wgpu::BindingResource>, group_index: usize) -> wgpu::BindGroup {
 
         log::info!("Creating entries.");
-        // Does the group exist?
         debug_assert!(group_index < self.bind_group_layouts.len());
-        // debug_assert!(self.bind_group_layouts[group_index].len() == resources.len());
 
         // Create entries.
-        // let entries = resources.iter().enumerate().map(|(ind, res)| wgpu::BindGroupEntry { binding: ind as u32, resource: res.clone(), }).collect::<Vec<_>>(); 
         let entries = resources.iter().enumerate().map(|(ind, res)| wgpu::BindGroupEntry { binding: ind as u32, resource: res.clone(), }).collect::<Vec<_>>(); 
 
         log::info!("Creating bind group.");
@@ -119,14 +93,13 @@ impl BindGroupMapper {
     }
 }
 
-/// A wrapper for render pipeline. Do we need a wrapper, or just a function? 
-//pub struct RenderPipelineWrapper<T: std::cmp::Eq + Hash + Copy + Debug> {
+/// A wrapper for render pipeline.
+/// Stores the pipeline. The wrapper can be used to create bind groups for this pipeline.
 pub struct RenderPipelineWrapper {
     pipeline: wgpu::RenderPipeline,
     layout_mapper: BindGroupMapper,
 }
 
-// impl<T: std::cmp::Eq + Hash + Copy + Debug> RenderPipelineWrapper<T> {
 impl RenderPipelineWrapper {
     pub fn init(
         device: &wgpu::Device,
@@ -167,4 +140,14 @@ impl RenderPipelineWrapper {
 
         self.layout_mapper.create_bind_group(device, resources, group_index)
     }
+}
+
+/// A wrapper for render pipeline.
+/// Stores the pipeline. The wrapper can be used to create bind groups for this pipeline.
+pub struct ComputePipelineWrapper {
+
+}
+
+impl ComputePipelineWrapper {
+
 }

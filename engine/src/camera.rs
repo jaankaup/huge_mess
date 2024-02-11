@@ -56,9 +56,6 @@ pub struct RayCameraUniform {
     padding2: [u32; 2],
 }
 
-// unsafe impl bytemuck::Zeroable for RayCameraUniform {}
-// unsafe impl bytemuck::Pod for RayCameraUniform {}
-
 /// A camera for basic rendering and ray tracing purposes.
 pub struct Camera {
     pos: cgmath::Vector3<f32>,

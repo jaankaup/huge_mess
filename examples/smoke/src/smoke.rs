@@ -12,8 +12,7 @@ use engine::core::SurfaceWrapper;
 use engine::basic_loop::BasicLoop;
 use crate::configuration::SmokeFeatures;
 use crate::smoke_pipelines::{
-    // create_default_render_pipeline,
-    DefaultBindGroups,
+    // DefaultBindGroups,
     default_render_shader_v4n4_camera_light_tex2
 };
 use engine::core::run;
@@ -29,7 +28,7 @@ mod configuration;
 mod smoke_pipelines; 
 
 struct SmokeApp {
-    depth_texture: Option<Tex>, 
+    depth_texture: Option<Tex>,
     camera: Camera,
     buffer: wgpu::Buffer,
     render_pipeline_wrapper: RenderPipelineWrapper,
@@ -109,7 +108,7 @@ impl Application for SmokeApp {
         Self {
             depth_texture: Some(Tex::create_depth_texture(&context, surface.config(), None)),
             camera: camera,
-            buffer: create_cube(&context.device, 8.0, false),
+            buffer: create_cube(&context.device, 18.0, false),
             render_pipeline_wrapper: render_pipeline_wrapper,
             light: light,
             bind_group1: bind_group1, 
