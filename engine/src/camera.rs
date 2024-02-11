@@ -305,28 +305,26 @@ impl Camera {
         // Rotation.
           
         let md = input_cache.get_mouse_delta();
+        log::info!("BEFORE: self.pitch = {:?} self.yaw = {:?} md = {:?}", self.pitch, self.yaw, md);
 
         // If left mouse is down update pitch, yaw and view.
         if let Some(InputState::Down(_,_)) = left_mouse_button {
 
-            log::info!("md = {:?}", md);
-            self.pitch = clamp(
-                self.pitch + (self.rotation_sensitivity * (md.y * (-1.0)) as f32),
-                -80.0,80.0);
+            self.pitch = clamp(-80.0, 80.0, self.pitch + self.rotation_sensitivity * (md.y * (-1.0)) as f32);
             self.yaw += self.rotation_sensitivity * md.x as f32 ;
 
             self.view = Vector3::new(
                 self.pitch.to_radians().cos() * self.yaw.to_radians().cos(),
                 self.pitch.to_radians().sin(),
                 self.pitch.to_radians().cos() * self.yaw.to_radians().sin()
-            ).normalize_to(1.0);
+                ).normalize_to(1.0);
         }
 
         // Update the camera uniform and the camera uniform buffer.
         // TODO: refactor.
         self.update_camera(queue);
         self.update_ray_camera(queue);
-        log::info!("pos = {:?} view = {:?}", self.pos, self.view);
+        log::info!("AFTER: self.pitch = {:?} self.yaw = {:?}", self.pitch, self.yaw);
     }
 
     fn update_camera(&self, queue: &wgpu::Queue) {

@@ -61,7 +61,6 @@ impl Loop for BasicLoop {
                         }
                     }
                     Event::NewEvents(..) => {
-                        log::info!("NEW EVENTS ARRIVED::::::");
                         input_cache.pre_update();
                     },
                     Event::Suspended => {

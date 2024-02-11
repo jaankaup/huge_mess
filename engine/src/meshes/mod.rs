@@ -3,12 +3,12 @@ use crate::buffer::buffer_from_data;
 /// Data for textured cube. vvvttnnn vvvttnnn vvvttnnn ...
 //#[allow(dead_code)]
 //pub fn create_cube(texture_coordinates: bool) -> Vec<f32> {
-pub fn create_cube(device: &wgpu::Device, texture_coordinates: bool) -> wgpu::Buffer {
+pub fn create_cube(device: &wgpu::Device, size: f32, texture_coordinates: bool) -> wgpu::Buffer {
 
     // 4-component version
     let v_data = [
-        [1.0 , -1.0, -1.0, 1.0], [1.0 , -1.0, 1.0, 1.0], [-1.0, -1.0, 1.0, 1.0], [-1.0, -1.0, -1.0, 1.0],
-        [1.0 , 1.0, -1.0, 1.0], [1.0, 1.0, 1.0, 1.0], [-1.0, 1.0, 1.0, 1.0], [-1.0, 1.0, -1.0, 1.0],
+        [size , -size, -size, size], [size , -size, size, size], [-size, -size, size, size], [-size, -size, -size, size],
+        [size , size, -size, size], [size, size, size, size], [-size, size, size, size], [-size, size, -size, size],
     ];
 
     let t_data = [

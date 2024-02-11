@@ -50,7 +50,7 @@ impl Application for SmokeApp {
         // Create camera.
         let mut camera = Camera::new(surface.config().width as f32,
                                      surface.config().height as f32,
-                                     (5.0, 2.0, 8.0),
+                                     (15.0, 12.0, -18.0),
                                      (0.0, 0.0, 0.0)
         );
         camera.set_rotation_sensitivity(1.0);
@@ -109,7 +109,7 @@ impl Application for SmokeApp {
         Self {
             depth_texture: Some(Tex::create_depth_texture(&context, surface.config(), None)),
             camera: camera,
-            buffer: create_cube(&context.device, false),
+            buffer: create_cube(&context.device, 8.0, false),
             render_pipeline_wrapper: render_pipeline_wrapper,
             light: light,
             bind_group1: bind_group1, 
