@@ -193,19 +193,6 @@ impl Camera {
         assert!(aspect_height > 0.0, "Height must be > 0.");
         assert!(aspect_width > 0.0, "Width must be > 0.");
 
-        // let pitch = clamp(
-        //     pitch,
-        //     -89.0,89.0);
-
-        
-        // let view = Vector3::new(
-        //     pitch.to_radians().cos() * yaw.to_radians().cos(),
-        //     pitch.to_radians().sin(),
-        //     pitch.to_radians().cos() * yaw.to_radians().sin()
-        // ).normalize_to(1.0);
-
-        // let view: cgmath::Vector3<f32> = cgmath::look_at(cgmath::Vector3::<f32>::new(yaw, pitch, 0.5), cgmath::Vector3::<f32>::new(0.0, 1.0, 0.0));
-
         let dir = cgmath::Vector3::<f32>::new(start_position.0 - look_at_position.0, start_position.1 - look_at_position.1, start_position.2 - look_at_position.2).normalize_to(1.0);
         let pitch = asin(dir.y as f64) as f32;
         let yaw = atan2(dir.x as f64, dir.z as f64) as f32;
@@ -222,7 +209,6 @@ impl Camera {
             up: cgmath::Vector3::unit_y(),
             aspect: aspect_width / aspect_height,
             fov: (1.485387,0.785387).into(),
-            //fov: (45.0,45.0).into(),
             znear: 0.01,
             zfar: 1000.0,
             movement_sensitivity: 0.003,
@@ -305,7 +291,6 @@ impl Camera {
         // Rotation.
           
         let md = input_cache.get_mouse_delta();
-        log::info!("BEFORE: self.pitch = {:?} self.yaw = {:?} md = {:?}", self.pitch, self.yaw, md);
 
         // If left mouse is down update pitch, yaw and view.
         if let Some(InputState::Down(_,_)) = left_mouse_button {
@@ -324,7 +309,6 @@ impl Camera {
         // TODO: refactor.
         self.update_camera(queue);
         self.update_ray_camera(queue);
-        log::info!("AFTER: self.pitch = {:?} self.yaw = {:?}", self.pitch, self.yaw);
     }
 
     fn update_camera(&self, queue: &wgpu::Queue) {

@@ -227,7 +227,7 @@ impl InputCache {
 
     /// Get the difference between the current and previous mouse position.
     pub fn get_mouse_delta(&self) -> PhysicalPosition::<f64> {
-        if self.mouse_moved { log::info!("Mouse moved {:?}", self.mouse_delta); self.mouse_delta }
+        if self.mouse_moved { self.mouse_delta }
         else { PhysicalPosition::<f64>::new(0.0, 0.0) }
     }
 
@@ -315,31 +315,24 @@ impl InputCache {
     }
     /// Update the state of keyboard.
     fn track_keyboard(&mut self, evt: KeyEv) {
-        //let key = evt.logical_key; // {
-        // log::info!("keyboardi");
         
         match evt.physical_key {
             PhysicalKey::Code(key_code) => 
                 match self.keyboard.get_mut(&key_code) {
                     Some(state) => {
-                        // Update the key time value.
-                        log::info!("updating key {:?}", evt);
                         let _debug_state = state.update(&evt.state, self.time_now);
-                        log::info!("debug_state ::: {:?}", _debug_state);
                     },
                     None => {
-                        log::info!("inserting key {:?}", evt);
                         // The key doesn't have any state. Add a new pressed state for this key.
                         let _ = self.keyboard.insert(key_code, InputState::Pressed(self.time_now));
                     }
                 },
-                _ => { log::info!("Ei prkl!!!!!!!!!!!!!!"); },
-            _ => {println!("{:?}", evt);}
+                _ => {  },
+            _ => {}
         }
     }
     /// Update the state of mouse buttons.
     fn track_mouse_button(&mut self, button: ev::MouseButton, state: ev::ElementState) {
-        log::info!("mouse button {:?}", button);
         self.mouse_buttons.update(&button, &state, self.time_now);
     }
     /// Update the state of mouse wheel.
@@ -362,19 +355,11 @@ impl InputCache {
     /// Handle the cursor enter event. TODO: implement.
     fn track_cursor_enter(&mut self) {
         self.mouse_position.inside = true;
-        #[cfg(feature = "input_debug")]
-        {
-            log::info!("cursor enters");
-        }
     }
     /// Handle the cursor leave event. TODO: implement.
     fn track_cursor_leave(&mut self) {
         self.mouse_delta = PhysicalPosition::<f64>::new(0.0, 0.0);
         self.mouse_position.inside = false;
-        #[cfg(feature = "input_debug")]
-        {
-            log::info!("cursor leaves");
-        }
     }
 }
 
@@ -396,7 +381,6 @@ impl KeyboardManager {
 
     pub fn test_key(&mut self, key: &Key, input: &InputCache) -> bool {
         
-        log::info!("TRACKING KEYSTATE!!!!");
         let state_key = input.key_state(key);
         let mut result = false;
 
