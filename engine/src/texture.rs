@@ -173,9 +173,9 @@ impl Texture {
             array_layer_count: Some(1), // std::num::NonZeroU32::new(1),
         });
 
-        let width = texture_extent.width;
-        let height = texture_extent.height;
-        let depth = texture_extent.depth_or_array_layers;
+        let _width = texture_extent.width;
+        let _height = texture_extent.height;
+        let _depth = texture_extent.depth_or_array_layers;
 
         Self {
 

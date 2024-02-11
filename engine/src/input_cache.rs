@@ -328,7 +328,7 @@ impl InputCache {
                     }
                 },
                 _ => {  },
-            _ => {}
+            // _ => {}
         }
     }
     /// Update the state of mouse buttons.

@@ -91,7 +91,7 @@ impl Loop for BasicLoop {
                                 target.exit();
                             }
                             #[cfg(not(target_arch = "wasm32"))]
-                            WindowEvent::KeyboardInput { event, .. } =>  {  
+                            WindowEvent::KeyboardInput {  .. } =>  {  
                                 // event:
                                 //     KeyEvent {
                                 //         logical_key: Key::Character(s),

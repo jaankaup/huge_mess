@@ -6,7 +6,7 @@ use engine::texture::{
     Texture as Tex,
 };
 use engine::camera::Camera;
-use engine::render_pass::create_render_pass;
+
 use wgpu::TextureView;
 use engine::core::SurfaceWrapper;
 use engine::basic_loop::BasicLoop;
@@ -32,6 +32,7 @@ struct SmokeApp {
     camera: Camera,
     buffer: wgpu::Buffer,
     render_pipeline_wrapper: RenderPipelineWrapper,
+    #[allow(dead_code)] 
     light: LightBuffer,
     bind_group1: wgpu::BindGroup,
     bind_group2: wgpu::BindGroup,
@@ -140,7 +141,7 @@ impl Application for SmokeApp {
     }
 
     /// Resize window.
-    fn resize(&mut self, context: &WGPUContext, surface_configuration: &wgpu::SurfaceConfiguration, new_size: winit::dpi::PhysicalSize<u32>) {
+    fn resize(&mut self, context: &WGPUContext, surface_configuration: &wgpu::SurfaceConfiguration, _new_size: winit::dpi::PhysicalSize<u32>) {
 
         self.depth_texture = Some(Texture::create_depth_texture(context, &surface_configuration, Some("depth-texture")));
         self.camera.resize(surface_configuration.width as f32, surface_configuration.height as f32);

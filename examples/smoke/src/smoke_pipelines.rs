@@ -1,9 +1,9 @@
-use core::fmt::Debug;
-use std::hash::Hash;
+
+
 use std::num::NonZeroU32;
 use wgpu::ShaderModule;
 use std::borrow::Cow;
-use engine::default_things::VertexStateWrapper;
+
 use engine::pipelines::{
     RenderPipelineWrapper,
     BindGroupMapper
@@ -105,12 +105,12 @@ pub fn default_render_shader_v4n4_camera_light_tex2(device: &wgpu::Device, sc_de
 
 pub fn create_render_pipeline_wrapper(
      device: &wgpu::Device,
-     sc_desc: &wgpu::SurfaceConfiguration, // NOT USED. Should we remove this?
+     _sc_desc: &wgpu::SurfaceConfiguration, // NOT USED. Should we remove this?
      bind_group_mapper: BindGroupMapper,
      wgsl_module: &ShaderModule,
-     vertex_attributes: &Vec<wgpu::VertexFormat>,
-     vertex_step_mode: wgpu::VertexStepMode,
-     vertex_entry: &str,
+     _vertex_attributes: &Vec<wgpu::VertexFormat>,
+     _vertex_step_mode: wgpu::VertexStepMode,
+     _vertex_entry: &str,
      primitive_state: &wgpu::PrimitiveState,
      depth_state: &Option<wgpu::DepthStencilState>,
      fragment_state: &Option<wgpu::FragmentState>,
