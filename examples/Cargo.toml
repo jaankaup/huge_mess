@@ -17,3 +17,7 @@ cgmath.workspace = true
 [[example]]
 name = "smoke"
 path = "smoke/src/smoke.rs"
+
+[[example]]
+name = "mc"
+path = "mc/src/mc.rs"

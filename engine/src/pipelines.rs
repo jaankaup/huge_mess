@@ -74,13 +74,14 @@ impl BindGroupMapper {
     }
 
     /// Create a bind group for group. The layouts must be created before calling this function.
-    pub fn create_bind_group(&self, device: &wgpu::Device, resources: &Vec<wgpu::BindingResource>, group_index: usize) -> wgpu::BindGroup {
+    pub fn create_bind_group(&self, device: &wgpu::Device, resources: &Vec<&wgpu::BindingResource>, group_index: usize) -> wgpu::BindGroup {
 
         log::info!("Creating entries.");
         debug_assert!(group_index < self.bind_group_layouts.len());
 
         // Create entries.
-        let entries = resources.iter().enumerate().map(|(ind, res)| wgpu::BindGroupEntry { binding: ind as u32, resource: res.clone(), }).collect::<Vec<_>>(); 
+        //let entries = resources.iter().enumerate().map(|(ind, res)| wgpu::BindGroupEntry { binding: ind as u32, resource: res.clone(), }).collect::<Vec<_>>(); 
+        let entries = resources.iter().enumerate().map(|(ind, res)| wgpu::BindGroupEntry { binding: ind as u32, resource: (**res).clone(), }).collect::<Vec<_>>(); 
 
         log::info!("Creating bind group.");
         device.create_bind_group(
@@ -136,7 +137,7 @@ impl RenderPipelineWrapper {
         &self.pipeline
     }
 
-    pub fn create_bind_group(&self, device: &wgpu::Device, resources: &Vec<wgpu::BindingResource>, group_index: usize) -> wgpu::BindGroup {
+    pub fn create_bind_group(&self, device: &wgpu::Device, resources: &Vec<&wgpu::BindingResource>, group_index: usize) -> wgpu::BindGroup {
 
         self.layout_mapper.create_bind_group(device, resources, group_index)
     }
@@ -170,5 +171,36 @@ impl ComputePipelineWrapper {
             pipeline,
             layout_mapper,
         }
+    }
+
+    pub fn get_pipeline(&self) -> &wgpu::ComputePipeline {
+        &self.pipeline
+    }
+
+    pub fn create_bind_group(&self, device: &wgpu::Device, resources: &Vec<&wgpu::BindingResource>, group_index: usize) -> wgpu::BindGroup {
+
+        self.layout_mapper.create_bind_group(device, resources, group_index)
+    }
+
+    pub fn create_compute_pass<'a>(
+        &'a self,
+        bind_groups: &'a Vec<(u32, &wgpu::BindGroup)>,
+        encoder: &'a mut wgpu::CommandEncoder,
+        label: wgpu::Label) -> wgpu::ComputePass<'a> {
+
+        let mut pass = encoder.begin_compute_pass(
+            &wgpu::ComputePassDescriptor { label: label, timestamp_writes: None,}
+            );
+        pass.set_pipeline(&self.pipeline);
+        for (e, bgs) in bind_groups.iter() {
+            pass.set_bind_group(*e as u32, &bgs, &[]);
+        }
+        pass
+    }
+
+    pub fn dispatch(&self, bind_groups: &Vec<(u32, &wgpu::BindGroup)>, encoder: &mut wgpu::CommandEncoder, x: u32, y: u32, z: u32, label: Option<&str>) {
+        let mut pass = self.create_compute_pass(bind_groups, encoder, label); 
+        pass.dispatch_workgroups(x,y,z);
+         
     }
 }

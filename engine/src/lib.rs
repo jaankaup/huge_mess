@@ -14,3 +14,8 @@ pub mod vertex;
 pub mod bindgroups;
 pub mod draw_commands;
 pub mod lights;
+pub mod noise_maker;
+pub mod pipeline_stuff;
+pub mod histogram;
+pub mod common_structs;
+pub mod algorithms;

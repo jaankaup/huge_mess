@@ -11,10 +11,8 @@ use wgpu::TextureView;
 use engine::core::SurfaceWrapper;
 use engine::basic_loop::BasicLoop;
 use crate::configuration::SmokeFeatures;
-use crate::smoke_pipelines::{
-    // DefaultBindGroups,
-    default_render_shader_v4n4_camera_light_tex2
-};
+use engine::pipeline_stuff::custom_pipelines::default_render_shader_v4n4_camera_light_tex2;
+
 use engine::core::run;
 
 use engine::core::WGPUContext;
@@ -43,7 +41,7 @@ impl Application for SmokeApp {
     /// Initialize application.
     fn init(context: &WGPUContext, surface: &SurfaceWrapper) -> Self {
 
-        log::info!("Initializing SmokeApp");
+        log::info!("Initializing McApp");
 
         log::info!("Creating camera.");
 
@@ -85,26 +83,26 @@ impl Application for SmokeApp {
             1,
             &include_bytes!("../../../textures/rock.png")[..],
             None);
-
+        
         log::info!("Creating pipeline wrapper.");
         let render_pipeline_wrapper = default_render_shader_v4n4_camera_light_tex2(&context.device, &surface.config());
         log::info!("Creating bind groups.");
         let bind_group1 = render_pipeline_wrapper.create_bind_group(&context.device,
                                                   &vec![
-                                                    camera.get_camera_uniform(&context.device).as_entire_binding(),
-                                                    light.get_buffer().as_entire_binding(),
+                                                    &camera.get_camera_uniform(&context.device).as_entire_binding(),
+                                                    &light.get_buffer().as_entire_binding(),
                                                   ],
                                                   0);
         let bind_group2 = render_pipeline_wrapper.create_bind_group(&context.device,
                          &vec![
-                         wgpu::BindingResource::TextureView(&grass_texture.view.unwrap()),
-                         wgpu::BindingResource::Sampler(&grass_texture.sampler.unwrap()),
-                         wgpu::BindingResource::TextureView(&rock_texture.view.unwrap()),
-                         wgpu::BindingResource::Sampler(&rock_texture.sampler.unwrap())
+                         &wgpu::BindingResource::TextureView(&grass_texture.view.unwrap()),
+                         &wgpu::BindingResource::Sampler(&grass_texture.sampler.unwrap()),
+                         &wgpu::BindingResource::TextureView(&rock_texture.view.unwrap()),
+                         &wgpu::BindingResource::Sampler(&rock_texture.sampler.unwrap())
                         ],
                                                   1);
 
-        log::info!("Finished initialization.");
+        // log::info!("Finished initialization.");
 
         Self {
             depth_texture: Some(Tex::create_depth_texture(&context, surface.config(), None)),
@@ -150,8 +148,6 @@ impl Application for SmokeApp {
     /// Application update.
     fn update(&mut self, context: &WGPUContext, input_cache: &InputCache) {
         self.camera.update_from_input(&context.queue, &input_cache);
-        // log::info!("{:?}", self.camera.get_view());
-        // log::info!("{:?}", self.camera.get_position());
     }
 
     fn close(&mut self, _wgpu_context: &WGPUContext){ 

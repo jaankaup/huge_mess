@@ -9,8 +9,8 @@ Try to create useful components that can be combined to something useful/beautif
 ### The list of algorithms and features that are under development.
 
 - [x] Smoke test (textured cube)
-- [ ] Marching cubes
-- [ ] Noise generator
+- [x] Marching cubes
+- [x] Noise generator
 - [ ] Fast Iterative method 2D
 - [ ] Fast Iterative method 3D
 - [ ] Radix Sort
@@ -28,4 +28,4 @@ Implement websocket connections.
 
 ## The game.
 
-Will be kept secret for now.
+Will be kept as a secret for now.
