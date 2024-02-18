@@ -203,4 +203,14 @@ impl ComputePipelineWrapper {
         pass.dispatch_workgroups(x,y,z);
          
     }
+
+    pub fn dispatch_indirect(&self,
+                             bind_groups: &Vec<(u32, &wgpu::BindGroup)>,
+                             encoder: &mut wgpu::CommandEncoder,
+                             indirect_buffer: &wgpu::Buffer,
+                             offset: wgpu::BufferAddress,
+                             label: Option<&str>) {
+        let mut pass = self.create_compute_pass(bind_groups, encoder, label); 
+        pass.dispatch_workgroups_indirect(indirect_buffer, offset);
+    }
 }

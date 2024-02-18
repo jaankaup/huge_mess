@@ -1,6 +1,10 @@
+use crate::texture::{
+    Texture as Tex,
+};
 use bytemuck::Pod;
 use bytemuck::Zeroable;
 use std::borrow::Cow;
+use std::mem::size_of;
 use crate::pipelines::{
     ComputePipelineWrapper,
     BindGroupMapper,
@@ -9,10 +13,17 @@ use crate::bindgroups::{
     create_buffer_bindgroup_layout,
     create_uniform_bindgroup_layout,
 };
-use crate::common_structs::DispatchIndirect;
+use crate::draw_commands::draw_indirect;
+use crate::common_structs::{
+    DispatchIndirect,
+    DrawIndirect,
+};
+use crate::buffer::to_vec;
 use crate::buffer::buffer_from_data;
 use crate::misc::Convert2Vec;
 use crate::impl_convert;
+
+use wgpu::TextureView;
 
 #[repr(C)]
 #[derive(Debug, Clone, Copy, Pod, Zeroable)]
@@ -46,15 +57,15 @@ struct CharProcessor {
     pre_processor_pipeline_wrapper: ComputePipelineWrapper,
     char_pipeline_bind_groups: wgpu::BindGroup,
     pre_processor_bind_groups: wgpu::BindGroup,
-    direct_dispatch_buffer: wgpu::Buffer,
+    indirect_dispatch_buffer: wgpu::Buffer,
     char_param_buffer: wgpu::Buffer,
     chars_buffer: wgpu::Buffer,
+    indirect_draw_buffer: wgpu::Buffer,
 }
 
 impl CharProcessor {
 
     pub fn init(device: &wgpu::Device,
-                indirect_draw_buffer: &wgpu::Buffer,
                 dispatch_counter_buffer: &wgpu::Buffer,
                 render_buffer: &wgpu::Buffer,
                 camera_buffer: &wgpu::Buffer,
@@ -62,8 +73,16 @@ impl CharProcessor {
                 max_points_per_char: u32,
                 max_number_of_vertices: u32) -> Self {
 
+        // Create render indirect buffer.
+        let indirect_draw_buffer = buffer_from_data::<DrawIndirect>(
+                &device,
+                &vec![DrawIndirect{ vertex_count: 0, instance_count: 1, base_vertex: 0, base_instance: 0, } ; 1024],
+                wgpu::BufferUsages::COPY_SRC | wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::INDIRECT,
+                Some("Char processor: Indirect draw buffer")
+                );
+
         // Create dispatch indirect buffer.
-        let direct_dispatch_buffer = 
+        let indirect_dispatch_buffer = 
                 buffer_from_data::<DispatchIndirect>(
                     &device,
                     &vec![DispatchIndirect{ x: 0, y: 0, z: 0, } ; 1024],
@@ -93,8 +112,6 @@ impl CharProcessor {
                 usage: wgpu::BufferUsages::COPY_SRC | wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_DST,
                 mapped_at_creation: false,
             });
-
-
 
         // Create here pipeline and bind group mapper for numbers.
         let mut bind_group_mapper = BindGroupMapper::init(device);
@@ -174,7 +191,7 @@ impl CharProcessor {
             &vec![
                 &camera_buffer.as_entire_binding(),
                 &char_param_buffer.as_entire_binding(), // TODO: keep char params information in this struct.
-                &direct_dispatch_buffer.as_entire_binding(),
+                &indirect_dispatch_buffer.as_entire_binding(),
                 &indirect_draw_buffer.as_entire_binding(),
                 &chars_buffer.as_entire_binding(),
             ],
@@ -185,9 +202,108 @@ impl CharProcessor {
             pre_processor_pipeline_wrapper: pre_processor_pipeline_wrapper,
             char_pipeline_bind_groups: char_bind_group,
             pre_processor_bind_groups: pre_processor_bind_group,
-            direct_dispatch_buffer: direct_dispatch_buffer,
+            indirect_dispatch_buffer: indirect_dispatch_buffer,
             char_param_buffer: char_param_buffer,
             chars_buffer: chars_buffer,
+            indirect_draw_buffer: indirect_draw_buffer,
+        }
+    }
+
+    pub fn render(&self,
+                  device: &wgpu::Device,
+                  queue: &wgpu::Queue,
+                  render_buffer: &wgpu::Buffer,
+                  render_bindgroup: &wgpu::BindGroup,
+                  render_pipeline: &wgpu::RenderPipeline,
+                  view: &wgpu::TextureView,
+                  depth_texture: &Tex,
+                  number_of_chars: u32,
+                  max_number_of_vertices: u32) {
+
+        let charparams_result = to_vec::<CharParams>(
+            &device,
+            &queue,
+            &self.char_param_buffer,
+            0,
+            (size_of::<CharParams>()) as wgpu::BufferAddress
+            ).unwrap();
+
+        // Can we avoid this. Should we use some other parameter than vertices_so_far (we have
+        // padding for future usage)?
+        if charparams_result[0].vertices_so_far > 0 {
+
+            // Create char params for pre processor. TODO: replace vertices_so_far value with some
+            // padding values.
+            let cp = CharParams{
+                vertices_so_far: 0,
+                iterator_end: number_of_chars,
+                draw_index: 0,
+                max_points_per_char: 4000,
+                max_number_of_vertices: max_number_of_vertices - 500000, // TODO: avoid this???
+                padding: [1,2,3],
+            };
+
+            queue.write_buffer(
+                &self.char_param_buffer,
+                0,
+                bytemuck::cast_slice(&[cp])
+                );
+
+            // Reset the top level histogram counter to zero. Implement this. We can do this some
+            // where else?
+            // self.histogram_dispatch_counter.reset_all_cpu_version(queue, 0);
+
+            // Dispatch char pre processor.
+            let mut encoder_char_preprocessor = device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: Some("char preprocessor encoder") });
+
+            self.pre_processor_pipeline_wrapper.dispatch(
+                &vec![(0, &self.pre_processor_bind_groups)],
+                &mut encoder_char_preprocessor,
+                1, 1, 1, Some("char preprocessor dispatch")
+                );
+
+            queue.submit(Some(encoder_char_preprocessor.finish()));
+
+            // Create point data from char elements and draw.
+            let mut encoder_char = device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: Some("numbers encoder") });
+
+            for i in 0..(charparams_result[0].draw_index + 1) {
+
+                self.char_pipeline_wrapper.dispatch_indirect(
+                    &vec![(0, &self.char_pipeline_bind_groups)],
+                    &mut encoder_char,
+                    &self.indirect_dispatch_buffer,
+                    (i * std::mem::size_of::<DispatchIndirect>() as u32) as wgpu::BufferAddress,
+                    Some("numbers dispatch")
+                    );
+
+        // draw_indirect(
+        //     &mut encoder,
+        //     &view,
+        //     self.depth_texture.as_ref(),
+        //     &vec![&self.bind_group1, &self.bind_group2],
+        //     self.render_pipeline_wrapper.get_pipeline(),
+        //     &self.output_buffer, // TODO: create this!
+        //     self.marching_cubes.get_draw_indirect_buffer(),
+        //     0,
+        //     &clear_color,
+        //     true
+        //     );
+
+                draw_indirect(
+                    &mut encoder_char,
+                    &view,
+                    Some(depth_texture), // we need to get this
+                    &vec![render_bindgroup], // we need to get this
+                    render_pipeline, // we need to get this
+                    &render_buffer, // we need to get this
+                    &self.indirect_draw_buffer, // Should we have a own draw_buffer?
+                    (i * std::mem::size_of::<DrawIndirect>() as u32) as wgpu::BufferAddress,
+                    &None,
+                    false
+                    );
+            }
+            queue.submit(Some(encoder_char.finish()));
         }
     }
 }

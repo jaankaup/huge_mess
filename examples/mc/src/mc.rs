@@ -231,7 +231,6 @@ impl Application for McApp {
         self.calculator += 1.0;
         self.noise_maker.update_param_a(&context.queue, 5.0 * (self.calculator * 0.005).sin()); 
         self.noise_maker.update_param_b(&context.queue, 5.0 * (self.calculator * 0.001).cos()); 
-
     }
 
     fn close(&mut self, _wgpu_context: &WGPUContext){ 
