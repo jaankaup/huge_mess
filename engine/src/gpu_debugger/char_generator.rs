@@ -51,7 +51,7 @@ struct Char {
 impl_convert!{CharParams}
 impl_convert!{Char}
 
-struct CharProcessor {
+pub struct CharProcessor {
 
     char_pipeline_wrapper: ComputePipelineWrapper,
     pre_processor_pipeline_wrapper: ComputePipelineWrapper,
