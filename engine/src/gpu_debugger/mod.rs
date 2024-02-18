@@ -9,6 +9,8 @@ use crate::common_structs::{
 };
 use bytemuck::{Pod, Zeroable};
 
+mod char_generator;
+
 #[repr(C)]
 #[derive(Debug, Clone, Copy, Pod, Zeroable)]
 struct Vertex {
@@ -43,18 +45,6 @@ struct Arrow {
 
 #[repr(C)]
 #[derive(Debug, Clone, Copy, Pod, Zeroable)]
-struct Char {
-    start_pos: [f32 ; 3],
-    font_size: f32,
-    value: [f32 ; 4],
-    vec_dim_count: u32,
-    color: u32,
-    decimal_count: u32,
-    auxiliary_data: u32,
-}
-
-#[repr(C)]
-#[derive(Debug, Clone, Copy, Pod, Zeroable)]
 struct ArrowAabbParams{
     max_number_of_vertices: u32,
     iterator_start_index: u32,
@@ -64,30 +54,15 @@ struct ArrowAabbParams{
 
 #[repr(C)]
 #[derive(Debug, Clone, Copy, Pod, Zeroable)]
-struct CharParams{
-    vertices_so_far: u32,
-    iterator_end: u32,
-    draw_index: u32,
-    max_points_per_char: u32,
-    max_number_of_vertices: u32,
-    padding: [u32 ; 3],
-    dispatch_indirect_prefix_sum: [u32; 64],
-}
-
-#[repr(C)]
-#[derive(Debug, Clone, Copy, Pod, Zeroable)]
 struct OtherRenderParams {
     scale_factor: f32,
 }
 
 impl_convert!{Arrow}
-impl_convert!{Char}
-impl_convert!{CharParams}
 
 #[derive(Eq, Hash, PartialEq)]
 enum GpuBuffer {
     CharBuffer,
-    CharParamsBuffer,
     ArrowBuffer,
     ArrowParamsBuffer,
     AabbBuffer,
@@ -104,10 +79,8 @@ pub struct GpuDebugger {
 impl GpuDebugger {
 
     fn create_buffers(&mut self, device: &wgpu::Device,
-                      char_params: &CharParams,
                       arrow_aabb_params: &ArrowAabbParams,
                       max_number_of_arrows: u32,
-                      max_number_of_chars: u32,
                       max_number_of_aabbs: u32,
                       max_number_of_aabb_wires: u32,
                       max_number_of_vertices: u32) {
@@ -130,28 +103,10 @@ impl GpuDebugger {
                 ));
 
         self.buffers.insert(
-            GpuBuffer::CharParamsBuffer,
-            buffer_from_data::<CharParams>(
-                &device,
-                &vec![*char_params],
-                wgpu::BufferUsages::COPY_SRC | wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_DST,
-                None
-                ));
-
-        self.buffers.insert(
             GpuBuffer::ArrowBuffer,
             device.create_buffer(&wgpu::BufferDescriptor{
                 label: Some("output_arrays buffer"),
                 size: (max_number_of_arrows * std::mem::size_of::<Arrow>() as u32) as u64,
-                usage: wgpu::BufferUsages::COPY_SRC | wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_DST,
-                mapped_at_creation: false,
-            }));
-
-        self.buffers.insert(
-            GpuBuffer::CharBuffer,
-            device.create_buffer(&wgpu::BufferDescriptor{
-                label: Some("output_chars"),
-                size: (max_number_of_chars * std::mem::size_of::<Char>() as u32) as u64,
                 usage: wgpu::BufferUsages::COPY_SRC | wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_DST,
                 mapped_at_creation: false,
             }));
