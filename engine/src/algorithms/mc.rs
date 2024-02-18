@@ -1,7 +1,8 @@
+use std::mem::size_of;
 use std::borrow::Cow;
+use bytemuck::{Zeroable, Pod};
 use crate::pipelines::BindGroupMapper;
 use crate::pipelines::ComputePipelineWrapper;
-use bytemuck::{Zeroable, Pod};
 use crate::buffer::buffer_from_data;
 use crate::common_structs::{DrawIndirect};
 use crate::histogram::Histogram;
@@ -73,11 +74,22 @@ impl MarchingCubes {
         self.mc_params
     }
 
+    /// Initialize maching cubes with noise buffer and mc parameters. Noise buffer must be large
+    /// enought to hold the data expressed in mc params. TODO: a noise params struct?
     pub fn init_with_noise_buffer(device: &wgpu::Device,
                                   mc_params: &McParams,
                                   noise_buffer: &wgpu::Buffer,
                                   output_buffer: &wgpu::Buffer,
                                   ) -> Self {
+
+        let min_buffer_size = (mc_params.noise_global_dimension[0] *
+                               mc_params.noise_global_dimension[1] *
+                               mc_params.noise_global_dimension[2] *
+                               mc_params.noise_local_dimension[0] *
+                               mc_params.noise_local_dimension[1] *
+                               mc_params.noise_local_dimension[2]) as u64 * size_of::<f32>() as u64; 
+
+        debug_assert!(noise_buffer.size() >= min_buffer_size);
 
         let histogram = Histogram::init(device, &vec![0]);
 
@@ -94,7 +106,6 @@ impl MarchingCubes {
             buffer_from_data::<DrawIndirect>(
             &device,
             &[indirect_data],
-            // wgpu::BufferUsages::VERTEX |
             wgpu::BufferUsages::COPY_SRC |
             wgpu::BufferUsages::COPY_DST |
             wgpu::BufferUsages::INDIRECT |
@@ -111,12 +122,11 @@ impl MarchingCubes {
         bind_group_mapper.insert(device, 0, &create_buffer_bindgroup_layout(4, wgpu::ShaderStages::COMPUTE, false));
         bind_group_mapper.build_bind_group_layouts(device);
 
-        // Create wgsl module. TODO: from function parameter.
+        // Create wgsl module. TODO: should the shader module be given from function parameter?
         let wgsl_module = &device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("Default render shader"),
             source: wgpu::ShaderSource::Wgsl(
                 Cow::Borrowed(include_str!("wgsl/marching_cubes_indirect.wgsl"))),
-
         });
 
         // Create pipeline layout

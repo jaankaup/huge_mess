@@ -19,3 +19,4 @@ pub mod pipeline_stuff;
 pub mod histogram;
 pub mod common_structs;
 pub mod algorithms;
+pub mod gpu_debugger;
