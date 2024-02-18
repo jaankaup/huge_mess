@@ -338,10 +338,10 @@ fn main(@builtin(local_invocation_id)    local_id: vec3<u32>,
 
     let actual_global_id = local_id.x + offset * 4u * work_group_id.x;
 
-    let c0 = vec4<f32>(vec3<f32>(index_to_uvec3(actual_global_id,               noise_params.global_dim.x, noise_params.global_dim.y)) , 0.3);
-    let c1 = vec4<f32>(vec3<f32>(index_to_uvec3(actual_global_id + offset,      noise_params.global_dim.x, noise_params.global_dim.y)) , 0.3);
-    let c2 = vec4<f32>(vec3<f32>(index_to_uvec3(actual_global_id + offset * 2u, noise_params.global_dim.x, noise_params.global_dim.y)) , 0.3);
-    let c3 = vec4<f32>(vec3<f32>(index_to_uvec3(actual_global_id + offset * 3u, noise_params.global_dim.x, noise_params.global_dim.y)) , 0.3);
+    let c0 = vec4<f32>(vec3<f32>(index_to_uvec3(actual_global_id,               noise_params.global_dim.x, noise_params.global_dim.y)) , 0.3) * 0.1;
+    let c1 = vec4<f32>(vec3<f32>(index_to_uvec3(actual_global_id + offset,      noise_params.global_dim.x, noise_params.global_dim.y)) , 0.3) * 0.1;
+    let c2 = vec4<f32>(vec3<f32>(index_to_uvec3(actual_global_id + offset * 2u, noise_params.global_dim.x, noise_params.global_dim.y)) , 0.3) * 0.1;
+    let c3 = vec4<f32>(vec3<f32>(index_to_uvec3(actual_global_id + offset * 3u, noise_params.global_dim.x, noise_params.global_dim.y)) , 0.3) * 0.1;
 
     let noise0 = create_land_noise(5.3 * c0.xyz) - 23.2 * create_small_noise(2.1 * c0.xyz); // + noise_params.position.y;
     let noise1 = create_land_noise(5.3 * c1.xyz) - 23.2 * create_small_noise(2.1 * c1.xyz); // + noise_params.position.y;
@@ -353,10 +353,10 @@ fn main(@builtin(local_invocation_id)    local_id: vec3<u32>,
     // let ball2 = pow(c2.x - scene_center.x, 2.0) + pow(c2.y - scene_center.y, 2.0) + pow(c2.z - scene_center.z, 2.0) - pow(50.0, 2.0); 
     // let ball3 = pow(c3.x - scene_center.x, 2.0) + pow(c3.y - scene_center.y, 2.0) + pow(c3.z - scene_center.z, 2.0) - pow(50.0, 2.0); 
  
-    noise_output_data.output_data[actual_global_id]               = -30.0 + c0.y + 13.0 * cnoise(c0) + noise0 * 125.0;
-    noise_output_data.output_data[actual_global_id + offset]      = -30.0 + c1.y + 13.0 * cnoise(c1) + noise1 * 125.0;
-    noise_output_data.output_data[actual_global_id + offset * 2u] = -30.0 + c2.y + 13.0 * cnoise(c2) + noise2 * 125.0;
-    noise_output_data.output_data[actual_global_id + offset * 3u] = -30.0 + c3.y + 13.0 * cnoise(c3) + noise3 * 125.0;
+    noise_output_data.output_data[actual_global_id]               = - 150.0 + c0.y + 13.0 * cnoise(c0) + noise0 * 85.0 + fbm2(vec2<f32>((0.03 * c0.x + 0.04 * c0.y - 0.02 * c0.z * noise_params.param_a), 0.05 * noise_params.param_b)) * 100; 
+    noise_output_data.output_data[actual_global_id + offset]      = - 150.0 + c1.y + 13.0 * cnoise(c1) + noise1 * 85.0 + fbm2(vec2<f32>((0.03 * c1.x + 0.04 * c1.y - 0.02 * c1.z * noise_params.param_a), 0.05 * noise_params.param_b)) * 100;
+    noise_output_data.output_data[actual_global_id + offset * 2u] = - 150.0 + c2.y + 13.0 * cnoise(c2) + noise2 * 85.0 + fbm2(vec2<f32>((0.03 * c2.x + 0.04 * c2.y - 0.02 * c2.z * noise_params.param_a), 0.05 * noise_params.param_b)) * 100;
+    noise_output_data.output_data[actual_global_id + offset * 3u] = - 150.0 + c3.y + 13.0 * cnoise(c3) + noise3 * 85.0 + fbm2(vec2<f32>((0.03 * c3.x + 0.04 * c3.y - 0.02 * c3.z * noise_params.param_a), 0.05 * noise_params.param_b)) * 100;
 }
 
 fn create_land_noise(v: vec3<f32>) -> f32 {

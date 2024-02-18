@@ -14,9 +14,11 @@ impl WGPUFeatures for McFeatures {
     fn required_features() -> wgpu::Features {
 
         if cfg!(not(target_arch = "wasm32")) {
-            wgpu::Features::empty()
             // wgpu::Features::PUSH_CONSTANTS |
             // wgpu::Features::WRITE_TIMESTAMP_INSIDE_PASSES
+            //wgpu::Features::POLYGON_MODE_LINE
+
+            wgpu::Features::empty()
         }
         else {
             wgpu::Features::empty()
@@ -33,6 +35,8 @@ impl WGPUFeatures for McFeatures {
         limits.max_push_constant_size = 4;
         limits.max_push_constant_size = 4;
         limits.max_bind_groups = 6;
+        // limits.max_uniform_buffer_binding_size = 268435456; 
+        limits.max_storage_buffer_binding_size = 268435456; 
         }
 
         limits.max_storage_buffers_per_shader_stage = 10;

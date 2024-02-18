@@ -42,6 +42,7 @@ struct McApp {
     noise_maker: NoiseMaker,
     marching_cubes: MarchingCubes,
     output_buffer: wgpu::Buffer,
+    calculator: f32,  
 }
 
 impl Application for McApp {
@@ -113,7 +114,7 @@ impl Application for McApp {
         let noise_maker = NoiseMaker::init(
                   &context.device,
                   &"main".to_string(),
-                  [128,128,128],
+                  [256,128,256],
                   [1, 1, 1],
                   [1.0,1.0,1.0],
                   0.5,
@@ -123,20 +124,20 @@ impl Application for McApp {
 
         let output_buffer = context.device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("Mc output buffer"),
-            size: 128*128*128*16 as u64,
+            size: 256*128*256*16 as u64,
             usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_SRC | wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_DST,
             mapped_at_creation: false,
         });
 
         let mc_params = McParams {
             base_position: [0.0, 0.0, 0.0, 1.0],
-            isovalue: 15.0,
+            isovalue: -15.0,
             cube_length: 1.0,
             future_usage1: 0.0,
             future_usage2: 0.0,
-            noise_global_dimension: [128,
+            noise_global_dimension: [256,
             128,
-            128,
+            256,
             0
             ],
             noise_local_dimension: [1,
@@ -158,11 +159,12 @@ impl Application for McApp {
             buffer: create_cube(&context.device, 18.0, false),
             render_pipeline_wrapper: render_pipeline_wrapper,
             light: light,
-            bind_group1: bind_group1, 
-            bind_group2: bind_group2, 
+            bind_group1: bind_group1,
+            bind_group2: bind_group2,
             noise_maker: noise_maker,
             marching_cubes: marching_cubes,
             output_buffer: output_buffer,
+            calculator: 0.0,
         }
     }
 
@@ -218,7 +220,7 @@ impl Application for McApp {
     fn update(&mut self, context: &WGPUContext, input_cache: &InputCache) {
         self.camera.update_from_input(&context.queue, &input_cache);
 
-        let total_grid_count = 128 * 128 * 128;
+        let total_grid_count = 256 * 128 * 256;
 
         let mut encoder_command = context.device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: Some("Noise & Mc encoder.") });
 
@@ -226,19 +228,10 @@ impl Application for McApp {
         self.marching_cubes.dispatch(&mut encoder_command, total_grid_count / 256, 1, 1);
         context.queue.submit(Some(encoder_command.finish()));
 
-        // let temp = to_vec::<DrawIndirect>(&context.device,
-        //                                      &context.queue,
-        //                                      self.marching_cubes.get_draw_indirect_buffer(),
-        //                                      0,
-        //                                      self.marching_cubes.get_draw_indirect_buffer().size());
-        // log::info!("temp :: {:?}", temp);
+        self.calculator += 1.0;
+        self.noise_maker.update_param_a(&context.queue, 5.0 * (self.calculator * 0.005).sin()); 
+        self.noise_maker.update_param_b(&context.queue, 5.0 * (self.calculator * 0.001).cos()); 
 
-        // let temp2 = to_vec::<f32>(&context.device,
-        //                                      &context.queue,
-        //                                      self.noise_maker.get_buffer(),
-        //                                      0,
-        //                                      self.noise_maker.get_buffer().size());
-        // log::info!("temp2 :: {:?}", temp2);
     }
 
     fn close(&mut self, _wgpu_context: &WGPUContext){ 

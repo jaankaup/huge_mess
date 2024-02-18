@@ -66,4 +66,3 @@ pub fn default_render_shader_v4n4_camera_light_tex2(device: &wgpu::Device, sc_de
         &fragment_state, 
         None)
 }
-
