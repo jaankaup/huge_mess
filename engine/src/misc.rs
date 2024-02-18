@@ -21,3 +21,11 @@ macro_rules! impl_convert {
 
 impl_convert!{u32}
 impl_convert!{f32}
+
+pub fn udiv_up_32(x: u32, y: u32) -> u32 {
+  (x + y - 1) / y
+}
+
+pub fn udiv_up_safe32(x: u32, y: u32) -> u32 {
+  if y == 0 { 0 } else { (x + y - 1) / y }
+}

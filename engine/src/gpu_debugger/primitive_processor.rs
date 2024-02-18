@@ -1,3 +1,4 @@
+use crate::misc::udiv_up_safe32;
 use crate::texture::{
     Texture as Tex,
 };
@@ -13,7 +14,7 @@ use crate::bindgroups::{
     create_buffer_bindgroup_layout,
     create_uniform_bindgroup_layout,
 };
-use crate::draw_commands::draw_indirect;
+use crate::draw_commands::draw;
 use crate::common_structs::{
     DispatchIndirect,
     DrawIndirect,
@@ -74,6 +75,7 @@ pub struct PrimitiveProcessor {
     aabb_buffer: wgpu::Buffer,
     aabb_wire_buffer: wgpu::Buffer,
     arrow_params_buffer: wgpu::Buffer,
+    arrow_aabb_params: ArrowAabbParams,
 }
 
 impl PrimitiveProcessor {
@@ -170,6 +172,130 @@ impl PrimitiveProcessor {
             aabb_buffer: aabb_buffer,
             aabb_wire_buffer: aabb_wire_buffer,
             arrow_params_buffer: arrow_params_buffer,
+            arrow_aabb_params: arrow_aabb_params,
+        }
+    }
+
+        pub fn render(&mut self,
+                  device: &wgpu::Device,
+                  queue: &wgpu::Queue,
+                  view: &wgpu::TextureView,
+                  depth_texture: &Tex,
+                  draw_buffer: &wgpu::Buffer,
+                  draw_bind_group: &wgpu::BindGroup,
+                  draw_pipeline: &wgpu::RenderPipeline,
+                  total_number_of_arrows: u32,
+                  total_number_of_aabbs: u32,
+                  total_number_of_aabb_wires: u32,
+                  max_number_of_vertices: u32,
+                  thread_count: u32,
+                  clear_color: Option<wgpu::Color>,
+                  clear: &mut bool
+                  ) {
+
+        // ADD these to gpu_debugger.
+        // Get the total number of elements.
+        //let elem_counter = self.histogram_element_counter.get_values(device, queue);
+
+        // let total_number_of_arrows = elem_counter[1];
+        // let total_number_of_aabbs = elem_counter[2];
+        // let total_number_of_aabb_wires = elem_counter[3];
+
+        const vertices_per_element_arrow: u32 = 72;
+        const vertices_per_element_aabb: u32 = 36;
+        const vertices_per_element_aabb_wire: u32 = 432;
+
+        // The number of vertices created with one dispatch.
+        let vertices_per_dispatch_arrow = thread_count * vertices_per_element_arrow;
+        let vertices_per_dispatch_aabb = thread_count * vertices_per_element_aabb;
+        let vertices_per_dispatch_aabb_wire = thread_count * vertices_per_element_aabb_wire;
+
+        // [(element_type, total number of elements, number of vercies per dispatch, vertices_per_element)]
+        let draw_params = [(0, total_number_of_arrows,     vertices_per_dispatch_arrow, vertices_per_element_arrow),
+                           (1, total_number_of_aabbs,      vertices_per_dispatch_aabb, vertices_per_element_aabb), // !!!
+                           (2, total_number_of_aabb_wires, vertices_per_dispatch_aabb_wire, vertices_per_element_aabb_wire)];
+
+        // For each element type, create triangle meshes and render with respect of draw buffer size.
+        for (e_type, e_size, v_per_dispatch, vertices_per_elem) in draw_params.iter() {
+
+            // The number of safe dispathes. This ensures the draw buffer doesn't over flow.
+            let safe_number_of_dispatches = max_number_of_vertices as u32 / v_per_dispatch;
+
+            // The number of items to create and draw.
+            let mut items_to_process = *e_size;
+
+            // Nothing to process.
+            if *e_size == 0 { continue; }
+
+            // Create the initial params.
+            self.arrow_aabb_params.iterator_start_index = 0;
+            self.arrow_aabb_params.iterator_end_index = std::cmp::min(*e_size, safe_number_of_dispatches * v_per_dispatch);
+            self.arrow_aabb_params.element_type = *e_type;
+
+            queue.write_buffer(
+                &self.arrow_params_buffer,
+                0,
+                bytemuck::cast_slice(&[self.arrow_aabb_params])
+            );
+
+            // Continue process until all element are rendered.
+            while items_to_process > 0 {
+
+                // The number of remaining dispatches to complete the triangle mesh creation and
+                // rendering.
+                let total_number_of_dispatches = udiv_up_safe32(items_to_process, thread_count);
+
+                // Calculate the number of dispatches for this run.
+                let local_dispatch = std::cmp::min(total_number_of_dispatches, safe_number_of_dispatches);
+
+                // Then number of elements that are going to be rendered.
+                let number_of_elements = std::cmp::min(local_dispatch * thread_count, items_to_process);
+
+                let mut encoder_arrow_aabb = device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: Some("arrow_aabb ... ") });
+
+                self.arrow_aabb_params.iterator_end_index = self.arrow_aabb_params.iterator_start_index + std::cmp::min(number_of_elements, safe_number_of_dispatches * v_per_dispatch);
+
+                queue.write_buffer(
+                    &self.arrow_params_buffer,
+                    0,
+                    bytemuck::cast_slice(&[self.arrow_aabb_params])
+                );
+
+                self.aabb_pipeline_wrapper.dispatch(
+                    &vec![(0, &self.aabb_bind_group)],
+                    &mut encoder_arrow_aabb,
+                    local_dispatch, 1, 1, Some("arrow local dispatch")
+                );
+
+                // println!("local_dispatch == {}", local_dispatch);
+
+                queue.submit(Some(encoder_arrow_aabb.finish()));
+
+
+                let draw_count = number_of_elements * vertices_per_elem;
+
+                let mut encoder_arrow_rendering = device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: Some("arrow rendering ... ") });
+
+                draw(&mut encoder_arrow_rendering,
+                     &view,
+                     Some(depth_texture),
+                     &vec![draw_bind_group],
+                     draw_pipeline,
+                     draw_buffer,
+                     0..draw_count,
+                     if *clear && clear_color.is_none() { &Some(wgpu::Color { r: 0.1, g: 0.0, b: 0.0, a: 1.0, }) } else { &clear_color }, // Wrong place for this. Add to draw.
+                     *clear
+                );
+
+                if *clear { *clear = false; }
+
+                // Decrease the total count of elements.
+                items_to_process = items_to_process - number_of_elements;
+
+                queue.submit(Some(encoder_arrow_rendering.finish()));
+
+                self.arrow_aabb_params.iterator_start_index = self.arrow_aabb_params.iterator_end_index; // + items_to_process;
+            }
         }
     }
 }

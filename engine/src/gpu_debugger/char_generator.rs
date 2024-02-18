@@ -1,3 +1,4 @@
+use crate::histogram::Histogram;
 use crate::texture::{
     Texture as Tex,
 };
@@ -61,17 +62,20 @@ pub struct CharProcessor {
     char_param_buffer: wgpu::Buffer,
     chars_buffer: wgpu::Buffer,
     indirect_draw_buffer: wgpu::Buffer,
+    dispatch_counter_histogram: Histogram, 
 }
 
 impl CharProcessor {
 
     pub fn init(device: &wgpu::Device,
-                dispatch_counter_buffer: &wgpu::Buffer,
                 render_buffer: &wgpu::Buffer,
                 camera_buffer: &wgpu::Buffer,
                 max_number_of_chars: u32,
                 max_points_per_char: u32,
                 max_number_of_vertices: u32) -> Self {
+
+        // Create histogram for wgsl shader.
+        let histogram = Histogram::init(device, &vec![0]);
 
         // Create render indirect buffer.
         let indirect_draw_buffer = buffer_from_data::<DrawIndirect>(
@@ -179,7 +183,7 @@ impl CharProcessor {
             device,
             &vec![
                 &indirect_draw_buffer.as_entire_binding(),
-                &dispatch_counter_buffer.as_entire_binding(),
+                &histogram.get_histogram_buffer().as_entire_binding(),
                 &chars_buffer.as_entire_binding(),
                 &render_buffer.as_entire_binding(),
             ],
@@ -191,7 +195,7 @@ impl CharProcessor {
             &vec![
                 &camera_buffer.as_entire_binding(),
                 &char_param_buffer.as_entire_binding(), // TODO: keep char params information in this struct.
-                &indirect_dispatch_buffer.as_entire_binding(),
+                &indirect_dispatch_buffer.as_entire_binding(), // ADD histogram
                 &indirect_draw_buffer.as_entire_binding(),
                 &chars_buffer.as_entire_binding(),
             ],
@@ -206,6 +210,7 @@ impl CharProcessor {
             char_param_buffer: char_param_buffer,
             chars_buffer: chars_buffer,
             indirect_draw_buffer: indirect_draw_buffer,
+            dispatch_counter_histogram: histogram,
         }
     }
 
@@ -218,7 +223,9 @@ impl CharProcessor {
                   view: &wgpu::TextureView,
                   depth_texture: &Tex,
                   number_of_chars: u32,
-                  max_number_of_vertices: u32) {
+                  max_number_of_vertices: u32,
+                  clear_color: Option<wgpu::Color>, 
+                  clear: bool) {
 
         let charparams_result = to_vec::<CharParams>(
             &device,
@@ -249,9 +256,7 @@ impl CharProcessor {
                 bytemuck::cast_slice(&[cp])
                 );
 
-            // Reset the top level histogram counter to zero. Implement this. We can do this some
-            // where else?
-            // self.histogram_dispatch_counter.reset_all_cpu_version(queue, 0);
+            self.dispatch_counter_histogram.reset_all_cpu_version(queue, 0);
 
             // Dispatch char pre processor.
             let mut encoder_char_preprocessor = device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: Some("char preprocessor encoder") });
@@ -277,30 +282,17 @@ impl CharProcessor {
                     Some("numbers dispatch")
                     );
 
-        // draw_indirect(
-        //     &mut encoder,
-        //     &view,
-        //     self.depth_texture.as_ref(),
-        //     &vec![&self.bind_group1, &self.bind_group2],
-        //     self.render_pipeline_wrapper.get_pipeline(),
-        //     &self.output_buffer, // TODO: create this!
-        //     self.marching_cubes.get_draw_indirect_buffer(),
-        //     0,
-        //     &clear_color,
-        //     true
-        //     );
-
                 draw_indirect(
                     &mut encoder_char,
                     &view,
                     Some(depth_texture), // we need to get this
                     &vec![render_bindgroup], // we need to get this
                     render_pipeline, // we need to get this
-                    &render_buffer, // we need to get this
+                    render_buffer, // we need to get this
                     &self.indirect_draw_buffer, // Should we have a own draw_buffer?
                     (i * std::mem::size_of::<DrawIndirect>() as u32) as wgpu::BufferAddress,
-                    &None,
-                    false
+                    if clear && clear_color.is_none() { &Some(wgpu::Color { r: 0.1, g: 0.0, b: 0.0, a: 1.0, }) } else { &clear_color },
+                    clear
                     );
             }
             queue.submit(Some(encoder_char.finish()));

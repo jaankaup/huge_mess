@@ -177,8 +177,6 @@ impl Application for McApp {
         // If there is nothing to draw, this must be executed.
         let mut encoder = context.device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: Some("Dummy encoder") });
 
-
-
         draw_indirect(
             &mut encoder,
             &view,
