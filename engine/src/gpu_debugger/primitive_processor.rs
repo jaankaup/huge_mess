@@ -120,15 +120,7 @@ impl PrimitiveProcessor {
                 None);
 
         // Create here pipeline for arrow & aabb pipeline.
-        //let aabb_pipeline_wrapper = ComputePipelineWrapper::init(
-        //        device,
-        //        &aabb_pipeline_layout,
-        //        &wgsl_module,
-        //        "main",
-        //        bind_group_mapper,
-        //        Some("Arrow aabb pipeline"));
 
-        // Create here pipeline and bind group mapper for char preprocessor.
         let mut aabb_mapper = BindGroupMapper::init(device);
         aabb_mapper.insert(device, 0, &create_uniform_bindgroup_layout(0, wgpu::ShaderStages::COMPUTE));
         aabb_mapper.insert(device, 0, &create_buffer_bindgroup_layout(1, wgpu::ShaderStages::COMPUTE, false));
