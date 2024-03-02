@@ -1,3 +1,5 @@
+use crate::histogram::Histogram;
+use crate::texture::Texture as Tex;
 use crate::lights::LightBuffer;
 use crate::gpu_debugger::char_generator::CharProcessor;
 use crate::gpu_debugger::primitive_processor::PrimitiveProcessor;
@@ -40,6 +42,7 @@ pub struct GpuDebugger {
     v4v4_bind_group: wgpu::BindGroup,
     render_params: RenderParamBuffer,
     light: LightBuffer,
+    histogram_element_counter: Histogram,
 }
         // ADD these to gpu_debugger.
         // Get the total number of elements.
@@ -101,7 +104,6 @@ impl GpuDebugger {
                 &vec![&camera_buffer.as_entire_binding(), &light.get_buffer().as_entire_binding(), &render_param_buffer.get_buffer().as_entire_binding()],
                 0);
 
-
         Self {
             primitive_processor: primitive_processor,
             char_processor: char_processor,
@@ -113,6 +115,44 @@ impl GpuDebugger {
             v4v4_bind_group: v4v4_bind_group,
             render_params: render_param_buffer,
             light: light,
+            histogram_element_counter: Histogram::init(device, &vec![0; 4]),
         }
+    }
+
+    pub fn render(&mut self,
+                  device: &wgpu::Device,
+                  queue: &wgpu::Queue,
+                  view: &wgpu::TextureView,
+                  draw_buffer: &wgpu::Buffer,
+                  draw_bind_group: &wgpu::BindGroup,
+                  draw_pipeline: &wgpu::RenderPipeline,
+                  depth_texture: &Tex,
+                  clear: &mut bool) {
+
+        // Check the total number of elements.
+        let elem_counter = self.histogram_element_counter.get_values(device, queue);
+
+        let total_number_of_chars = elem_counter[0];
+        let total_number_of_arrows = elem_counter[1];
+        let total_number_of_aabbs = elem_counter[2];
+        let total_number_of_aabb_wires = elem_counter[3];
+
+        let mut clear = false;
+
+        self.primitive_processor.render(
+            device,
+            queue,
+            view,
+            depth_texture,
+            draw_buffer,
+            draw_bind_group, //: &wgpu::BindGroup,
+            draw_pipeline, //: &wgpu::RenderPipeline,
+            total_number_of_arrows,
+            total_number_of_aabbs,
+            total_number_of_aabb_wires,
+            self.max_number_of_vertices,
+            64,
+            Some(wgpu::Color { r: 0.1, g: 0.0, b: 0.0, a: 1.0, }),
+            &mut clear);
     }
 }
