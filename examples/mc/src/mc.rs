@@ -50,7 +50,7 @@ impl Application for McApp {
     /// Initialize application.
     fn init(context: &WGPUContext, surface: &SurfaceWrapper) -> Self {
 
-        log::info!("Initializing SmokeApp");
+        log::info!("Initializing AabbApp");
 
         log::info!("Creating camera.");
 

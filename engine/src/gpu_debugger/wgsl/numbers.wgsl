@@ -81,8 +81,8 @@ var<storage,read_write> input_data: array<Char>;
 @group(0) @binding(3)
 var<storage,read_write> output_data: array<VVVC>;
 
-let STRIDE: u32 = 64u;
-let PI: f32 = 3.14159265358979323846;
+const STRIDE: u32 = 64u;
+const PI: f32 = 3.14159265358979323846;
 
 // CHAR FUNCTIONS.
 

@@ -44,7 +44,8 @@ pub fn create_render_pipeline_wrapper(
      primitive_state: &wgpu::PrimitiveState,
      depth_state: &Option<wgpu::DepthStencilState>,
      fragment_state: &Option<wgpu::FragmentState>,
-     multiview: Option<NonZeroU32>) -> RenderPipelineWrapper { 
+     multiview: Option<NonZeroU32>,
+     label: Option<&str>) -> RenderPipelineWrapper { 
 
     // Create pipeline layout
     let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
@@ -81,7 +82,7 @@ pub fn create_render_pipeline_wrapper(
         multisample,
         &fragment_state,
         &multiview,
-        Some("Jeejee"),
+        label,
         bind_group_mapper,
     )
 }

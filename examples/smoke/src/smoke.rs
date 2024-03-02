@@ -23,7 +23,7 @@ use engine::meshes::create_cube;
 use engine::logger::initialize_env_logger; 
 use log::LevelFilter;
 mod configuration; 
-mod smoke_pipelines; 
+// mod smoke_pipelines; 
 
 struct SmokeApp {
     depth_texture: Option<Tex>,

@@ -133,7 +133,7 @@ impl PrimitiveProcessor {
 
         // Create wgsl module.
         let aabb_wgsl_module = &device.create_shader_module(wgpu::ShaderModuleDescriptor {
-            label: Some("Arrow aabb module"),
+            label: Some("wgsl/char_preprocessor.wgsl"),
             source: wgpu::ShaderSource::Wgsl(
                 Cow::Borrowed(include_str!("wgsl/char_preprocessor.wgsl"))),
         });
@@ -192,14 +192,6 @@ impl PrimitiveProcessor {
                   clear_color: Option<wgpu::Color>,
                   clear: &mut bool
                   ) {
-
-        // ADD these to gpu_debugger.
-        // Get the total number of elements.
-        //let elem_counter = self.histogram_element_counter.get_values(device, queue);
-
-        // let total_number_of_arrows = elem_counter[1];
-        // let total_number_of_aabbs = elem_counter[2];
-        // let total_number_of_aabb_wires = elem_counter[3];
 
         const vertices_per_element_arrow: u32 = 72;
         const vertices_per_element_aabb: u32 = 36;

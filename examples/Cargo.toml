@@ -21,3 +21,7 @@ path = "smoke/src/smoke.rs"
 [[example]]
 name = "mc"
 path = "mc/src/mc.rs"
+
+[[example]]
+name = "aabb"
+path = "aabb_numbers/src/aabb_numbers.rs"
