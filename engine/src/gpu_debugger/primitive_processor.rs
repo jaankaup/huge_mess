@@ -1,3 +1,4 @@
+use crate::buffer::add_data;
 use crate::misc::udiv_up_safe32;
 use crate::texture::{
     Texture as Tex,
@@ -41,14 +42,14 @@ struct Triangle {
 
 #[repr(C)]
 #[derive(Debug, Clone, Copy, Pod, Zeroable)]
-struct AABB {
-    min: [f32; 4],
-    max: [f32; 4],
+pub struct AABB {
+    pub min: [f32; 4],
+    pub max: [f32; 4],
 }
 
 #[repr(C)]
 #[derive(Debug, Clone, Copy, Pod, Zeroable)]
-struct Arrow {
+pub struct Arrow {
     start_pos: [f32 ; 4],
     end_pos: [f32 ; 4],
     color: u32,
@@ -58,7 +59,7 @@ struct Arrow {
 
 #[repr(C)]
 #[derive(Debug, Clone, Copy, Pod, Zeroable)]
-struct ArrowAabbParams{
+pub struct ArrowAabbParams{
     max_number_of_vertices: u32,
     iterator_start_index: u32,
     iterator_end_index: u32,
@@ -95,31 +96,31 @@ impl PrimitiveProcessor {
         };
 
         let arrow_buffer = device.create_buffer(&wgpu::BufferDescriptor{
-                label: Some("array buffer"),
-                size: (max_number_of_arrows * std::mem::size_of::<Arrow>() as u32) as u64,
-                usage: wgpu::BufferUsages::COPY_SRC | wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_DST,
-                mapped_at_creation: false,
-            });
+            label: Some("array buffer"),
+            size: (max_number_of_arrows * std::mem::size_of::<Arrow>() as u32) as u64,
+            usage: wgpu::BufferUsages::COPY_SRC | wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_DST,
+            mapped_at_creation: false,
+        });
 
         let aabb_buffer = device.create_buffer(&wgpu::BufferDescriptor{
-                label: Some("aabb buffer"),
-                size: (max_number_of_aabbs * std::mem::size_of::<AABB>() as u32) as u64,
-                usage: wgpu::BufferUsages::COPY_SRC | wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_DST,
-                mapped_at_creation: false,
-            });
+            label: Some("aabb buffer"),
+            size: (max_number_of_aabbs * std::mem::size_of::<AABB>() as u32) as u64,
+            usage: wgpu::BufferUsages::COPY_SRC | wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_DST,
+            mapped_at_creation: false,
+        });
 
         let aabb_wire_buffer = device.create_buffer(&wgpu::BufferDescriptor{
-                label: Some("output_aabbs"),
-                size: (max_number_of_aabb_wires * std::mem::size_of::<AABB>() as u32) as u64,
-                usage: wgpu::BufferUsages::COPY_SRC | wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_DST,
-                mapped_at_creation: false,
-            });
+            label: Some("output_aabbs"),
+            size: (max_number_of_aabb_wires * std::mem::size_of::<AABB>() as u32) as u64,
+            usage: wgpu::BufferUsages::COPY_SRC | wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_DST,
+            mapped_at_creation: false,
+        });
 
         let arrow_params_buffer = buffer_from_data::<ArrowAabbParams>(
-                &device,
-                &vec![arrow_aabb_params],
-                wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_SRC | wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_DST,
-                None);
+            &device,
+            &vec![arrow_aabb_params],
+            wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_SRC | wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_DST,
+            None);
 
         // Create here pipeline for arrow & aabb pipeline.
 
@@ -133,9 +134,9 @@ impl PrimitiveProcessor {
 
         // Create wgsl module.
         let aabb_wgsl_module = &device.create_shader_module(wgpu::ShaderModuleDescriptor {
-            label: Some("wgsl/char_preprocessor.wgsl"),
+            label: Some("wgsl/arrow_aabb.wgsl"),
             source: wgpu::ShaderSource::Wgsl(
-                Cow::Borrowed(include_str!("wgsl/char_preprocessor.wgsl"))),
+                Cow::Borrowed(include_str!("wgsl/arrow_aabb.wgsl"))),
         });
 
         // Create pipeline layout
@@ -146,22 +147,22 @@ impl PrimitiveProcessor {
         });
 
         let aabb_pipeline_wrapper = ComputePipelineWrapper::init(
-                device,
-                &aabb_pipeline_layout,
-                &aabb_wgsl_module,
-                "main",
-                aabb_mapper,
-                Some("Arrow aabb pipeline"));
+            device,
+            &aabb_pipeline_layout,
+            &aabb_wgsl_module,
+            "main",
+            aabb_mapper,
+            Some("Arrow aabb pipeline"));
 
         // Create bindgroups.
         let aabb_bind_group = aabb_pipeline_wrapper.create_bind_group(
             device,
             &vec![
-                &arrow_params_buffer.as_entire_binding(),
-                &arrow_buffer.as_entire_binding(), // TODO: keep char params information in this struct.
-                &aabb_buffer.as_entire_binding(),
-                &aabb_wire_buffer.as_entire_binding(),
-                &render_buffer.as_entire_binding(),
+            &arrow_params_buffer.as_entire_binding(),
+            &arrow_buffer.as_entire_binding(), // TODO: keep char params information in this struct.
+            &aabb_buffer.as_entire_binding(),
+            &aabb_wire_buffer.as_entire_binding(),
+            &render_buffer.as_entire_binding(),
             ],
             0);
 
@@ -176,7 +177,7 @@ impl PrimitiveProcessor {
         }
     }
 
-        pub fn render(&mut self,
+    pub fn render(&mut self,
                   device: &wgpu::Device,
                   queue: &wgpu::Queue,
                   view: &wgpu::TextureView,
@@ -191,7 +192,7 @@ impl PrimitiveProcessor {
                   thread_count: u32,
                   clear_color: Option<wgpu::Color>,
                   clear: &mut bool
-                  ) {
+                 ) {
 
         const vertices_per_element_arrow: u32 = 72;
         const vertices_per_element_aabb: u32 = 36;
@@ -204,8 +205,8 @@ impl PrimitiveProcessor {
 
         // [(element_type, total number of elements, number of vercies per dispatch, vertices_per_element)]
         let draw_params = [(0, total_number_of_arrows,     vertices_per_dispatch_arrow, vertices_per_element_arrow),
-                           (1, total_number_of_aabbs,      vertices_per_dispatch_aabb, vertices_per_element_aabb), // !!!
-                           (2, total_number_of_aabb_wires, vertices_per_dispatch_aabb_wire, vertices_per_element_aabb_wire)];
+        (1, total_number_of_aabbs,      vertices_per_dispatch_aabb, vertices_per_element_aabb), // !!!
+        (2, total_number_of_aabb_wires, vertices_per_dispatch_aabb_wire, vertices_per_element_aabb_wire)];
 
         // For each element type, create triangle meshes and render with respect of draw buffer size.
         for (e_type, e_size, v_per_dispatch, vertices_per_elem) in draw_params.iter() {
@@ -228,7 +229,7 @@ impl PrimitiveProcessor {
                 &self.arrow_params_buffer,
                 0,
                 bytemuck::cast_slice(&[self.arrow_aabb_params])
-            );
+                );
 
             // Continue process until all element are rendered.
             while items_to_process > 0 {
@@ -251,13 +252,13 @@ impl PrimitiveProcessor {
                     &self.arrow_params_buffer,
                     0,
                     bytemuck::cast_slice(&[self.arrow_aabb_params])
-                );
+                    );
 
                 self.aabb_pipeline_wrapper.dispatch(
                     &vec![(0, &self.aabb_bind_group)],
                     &mut encoder_arrow_aabb,
                     local_dispatch, 1, 1, Some("arrow local dispatch")
-                );
+                    );
 
                 // println!("local_dispatch == {}", local_dispatch);
 
@@ -277,11 +278,12 @@ impl PrimitiveProcessor {
                      0..draw_count,
                      if *clear && clear_color.is_none() { &Some(wgpu::Color { r: 0.1, g: 0.0, b: 0.0, a: 1.0, }) } else { &clear_color }, // Wrong place for this. Add to draw.
                      *clear
-                );
+                    );
 
                 if *clear { *clear = false; }
 
                 // Decrease the total count of elements.
+                log::info!("items_to_proces :: {:?}. Draw count :: {:?}", items_to_process, draw_count);
                 items_to_process = items_to_process - number_of_elements;
 
                 queue.submit(Some(encoder_arrow_rendering.finish()));
@@ -289,5 +291,17 @@ impl PrimitiveProcessor {
                 self.arrow_aabb_params.iterator_start_index = self.arrow_aabb_params.iterator_end_index; // + items_to_process;
             }
         }
+    }
+    pub fn get_aabb_buffer(&self) -> &wgpu::Buffer {
+        &self.aabb_buffer
+    }
+
+    pub fn append_aabb(&self, device: &wgpu::Device, queue: &wgpu::Queue, aabb: &AABB, offset: u32) {
+        add_data::<AABB>(
+            device,
+            queue,
+            &[*aabb],
+            &self.aabb_buffer,
+            (offset * std::mem::size_of::<AABB>() as u32).into());
     }
 }

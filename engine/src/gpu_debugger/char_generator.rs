@@ -39,7 +39,7 @@ struct CharParams{
 
 #[repr(C)]
 #[derive(Debug, Clone, Copy, Pod, Zeroable)]
-struct Char {
+pub struct Char {
     start_pos: [f32 ; 3],
     font_size: f32,
     value: [f32 ; 4],

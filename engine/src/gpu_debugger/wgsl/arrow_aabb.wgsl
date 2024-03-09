@@ -28,7 +28,7 @@ struct Triangle {
     c: Vertex,
 };
 
-type Hexaedra = array<Vertex , 8>;
+// type Hexaedra = array<Vertex , 8>;
 
 struct Arrow {
     start_pos: vec4<f32>,
@@ -58,11 +58,9 @@ var<storage, read_write> aabb_wires: array<AABB>;
 @group(0) @binding(4)
 var<storage,read_write> output_data: array<Triangle>;
 
-var<workgroup> thread_group_counter: u32 = 0; 
-
-let THREAD_COUNT: u32 = 64u;
-let STRIDE: u32 = 64u;
-let PI: f32 = 3.14159265358979323846;
+const THREAD_COUNT: u32 = 64u;
+const STRIDE: u32 = 64u;
+const PI: f32 = 3.14159265358979323846;
 
 // AABB triangulation.
 var<private> vertex_positions: array<u32, 36> = array<u32, 36>(
@@ -264,7 +262,6 @@ fn create_aabb(aabb: AABB, offset: u32, local_index: u32, color: f32, start_inde
 
     loop {
         if (i == 12u) { break; }
-        // output_data[thread_group_counter + i * offset + local_index] = 
         output_data[start_index + i * offset + local_index] = 
             Triangle(
             	Vertex(

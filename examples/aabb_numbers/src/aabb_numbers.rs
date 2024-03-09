@@ -1,3 +1,5 @@
+use std::mem::transmute;
+use engine::gpu_debugger::primitive_processor::AABB;
 use engine::gpu_debugger::GpuDebugger;
 use engine::common_structs::DrawIndirect;
 use engine::buffer::to_vec;
@@ -33,6 +35,8 @@ struct AabbApp {
     camera: Camera,
     draw_buffer: wgpu::Buffer,
     gpu_debugger: GpuDebugger,
+    some_counter: u32,
+    y_counter: u32,
 }
 
 impl Application for AabbApp {
@@ -54,7 +58,7 @@ impl Application for AabbApp {
         camera.set_movement_sensitivity(0.1);
 
         let draw_buffer = context.device.create_buffer(&wgpu::BufferDescriptor {
-            label: Some("Mc output buffer"),
+            label: Some("Aabb draw buffer"),
             size: 256*128*256*16 as u64,
             usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_SRC | wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_DST,
             mapped_at_creation: false,
@@ -86,42 +90,32 @@ impl Application for AabbApp {
             camera: camera,
             draw_buffer: draw_buffer,
             gpu_debugger: gpu_debugger,
+            some_counter: 0,
+            y_counter: 0,
         }
     }
 
     /// Render application.
     fn render(&mut self, context: &WGPUContext, view: &TextureView, _surface: &SurfaceWrapper ) {
 
+        // let aabb01 = AABB {
+        //     min: [1.0, 1.0, 1.0, 23423321.0],
+        //     max: [5.0, 5.0, 5.0, 23423321.0],
+        // };
+
         let clear_color = Some(wgpu::Color { r: 0.0, g: 0.0, b: 0.0, a: 1.0, });
 
+        let mut clear = true;
 
-        // If there is nothing to draw, this must be executed.
-        let mut encoder = context.device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: Some("Dummy encoder") });
-        // draw_indirect(
-        //     &mut encoder,
-        //     &view,
-        //     self.depth_texture.as_ref(),
-        //     &vec![&self.bind_group1, &self.bind_group2],
-        //     self.render_pipeline_wrapper.get_pipeline(),
-        //     &self.output_buffer, // TODO: create this!
-        //     self.marching_cubes.get_draw_indirect_buffer(),
-        //     0,
-        //     &clear_color,
-        //     true
-        //     );
-
-        // draw(&mut encoder,
-        //      view,
-        //      self.depth_texture.as_ref(),
-        //      &vec![&self.bind_group1, &self.bind_group2],
-        //      self.render_pipeline_wrapper.get_pipeline(),
-        //      &self.buffer,
-        //      0..36,
-        //      &clear_color,
-        //      false);
-
-        // context.queue.submit(Some(encoder.finish()));
-
+        log::info!("Rendering");
+        self.gpu_debugger.render(
+                  &context.device,
+                  &context.queue,
+                  view,
+                  &self.draw_buffer,
+                  &self.depth_texture.as_ref().unwrap(), //depth_texture: &Tex,
+                  &mut clear
+            );
     }
 
     /// Resize window.
@@ -135,8 +129,14 @@ impl Application for AabbApp {
     fn update(&mut self, context: &WGPUContext, input_cache: &InputCache) {
         self.camera.update_from_input(&context.queue, &input_cache);
 
-        let total_grid_count = 256 * 128 * 256;
+        self.some_counter += 1;
+        if self.some_counter == 100 { self.some_counter = 0; self.y_counter += 1; }
 
+        log::info!("Add aabb");
+        self.gpu_debugger.add_aabb(&context.device, &context.queue, &AABB {
+            min: [self.some_counter as f32 * 5.0 + 1.0, 1.0, self.y_counter as f32 * 5.0 + 1.0, unsafe {transmute::<u32, f32>(0xFFFF00FF)}],
+            max: [self.some_counter as f32 * 5.0 + 4.0, 4.0, self.y_counter as f32 * 5.0 + 4.0, unsafe {transmute::<u32, f32>(0xFFFF00FF)}],
+        });
     }
 
     fn close(&mut self, _wgpu_context: &WGPUContext){ 
