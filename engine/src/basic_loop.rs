@@ -112,7 +112,7 @@ impl Loop for BasicLoop {
                                     return;
                                 }
 
-                                // frame_counter.update();
+                                //frame_counter.update();
 
                                 let frame = surface.acquire(&context);
                                 let view = frame.texture.create_view(&wgpu::TextureViewDescriptor {
@@ -120,7 +120,7 @@ impl Loop for BasicLoop {
                                     ..wgpu::TextureViewDescriptor::default()
                                 });
 
-                                application.as_mut().unwrap().update(&context, &input_cache ); // Input cache
+                                application.as_mut().unwrap().update(&context, &input_cache); // Input cache
                                 application
                                     .as_mut()
                                     .unwrap()

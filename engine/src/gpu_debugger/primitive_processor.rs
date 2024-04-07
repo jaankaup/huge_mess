@@ -50,11 +50,11 @@ pub struct AABB {
 #[repr(C)]
 #[derive(Debug, Clone, Copy, Pod, Zeroable)]
 pub struct Arrow {
-    start_pos: [f32 ; 4],
-    end_pos: [f32 ; 4],
-    color: u32,
-    size: f32,
-    _padding: [u32; 2]
+    pub start_pos: [f32 ; 4],
+    pub end_pos: [f32 ; 4],
+    pub color: u32,
+    pub size: f32,
+    pub _padding: [u32; 2]
 }
 
 #[repr(C)]
@@ -141,7 +141,7 @@ impl PrimitiveProcessor {
 
         // Create pipeline layout
         let aabb_pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-            label: Some("Preprocessor layout"),
+            label: Some("Primitive processor layout"),
             bind_group_layouts: &aabb_mapper.get_bind_group_layouts().iter().collect::<Vec<_>>(),
             push_constant_ranges: &[],
         });
@@ -203,6 +203,10 @@ impl PrimitiveProcessor {
         let vertices_per_dispatch_aabb = thread_count * vertices_per_element_aabb;
         let vertices_per_dispatch_aabb_wire = thread_count * vertices_per_element_aabb_wire;
 
+        // log::info!("vertices_per_dispatch_arrow :: {:?}",vertices_per_dispatch_arrow);
+        // log::info!("vertices_per_dispatch_aabb :: {:?}",vertices_per_dispatch_aabb);
+        // log::info!("vertices_per_dispatch_aabb_wire :: {:?}",vertices_per_dispatch_aabb_wire);
+
         // [(element_type, total number of elements, number of vercies per dispatch, vertices_per_element)]
         let draw_params = [(0, total_number_of_arrows,     vertices_per_dispatch_arrow, vertices_per_element_arrow),
         (1, total_number_of_aabbs,      vertices_per_dispatch_aabb, vertices_per_element_aabb), // !!!
@@ -211,11 +215,15 @@ impl PrimitiveProcessor {
         // For each element type, create triangle meshes and render with respect of draw buffer size.
         for (e_type, e_size, v_per_dispatch, vertices_per_elem) in draw_params.iter() {
 
+            log::info!("BEGIN e_type = {:?}, e_size = {:?}, v_per_dispatch = {:?}, vertices_per_elem = {:?}", e_type, e_size, v_per_dispatch, vertices_per_elem);
+
             // The number of safe dispathes. This ensures the draw buffer doesn't over flow.
             let safe_number_of_dispatches = max_number_of_vertices as u32 / v_per_dispatch;
 
             // The number of items to create and draw.
             let mut items_to_process = *e_size;
+
+            log::info!("ITEMS_TO_PROCESS = {:?}", items_to_process);
 
             // Nothing to process.
             if *e_size == 0 { continue; }
@@ -225,15 +233,20 @@ impl PrimitiveProcessor {
             self.arrow_aabb_params.iterator_end_index = std::cmp::min(*e_size, safe_number_of_dispatches * v_per_dispatch);
             self.arrow_aabb_params.element_type = *e_type;
 
-            queue.write_buffer(
-                &self.arrow_params_buffer,
-                0,
-                bytemuck::cast_slice(&[self.arrow_aabb_params])
-                );
+            log::info!("self.arrow_aabb_params.iterator_end_index = {:?}", self.arrow_aabb_params.iterator_end_index);
+
+            //++ let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: Some("arrow params encoder ... ") });
+            //++ queue.write_buffer(
+            //++     &self.arrow_params_buffer,
+            //++     0,
+            //++     bytemuck::cast_slice(&[self.arrow_aabb_params])
+            //++     );
+            //++ queue.submit(Some(encoder.finish()));
 
             // Continue process until all element are rendered.
             while items_to_process > 0 {
 
+                log::info!("jiihaaa");
                 // The number of remaining dispatches to complete the triangle mesh creation and
                 // rendering.
                 let total_number_of_dispatches = udiv_up_safe32(items_to_process, thread_count);
@@ -244,15 +257,22 @@ impl PrimitiveProcessor {
                 // Then number of elements that are going to be rendered.
                 let number_of_elements = std::cmp::min(local_dispatch * thread_count, items_to_process);
 
-                let mut encoder_arrow_aabb = device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: Some("arrow_aabb ... ") });
-
                 self.arrow_aabb_params.iterator_end_index = self.arrow_aabb_params.iterator_start_index + std::cmp::min(number_of_elements, safe_number_of_dispatches * v_per_dispatch);
+                let mut encoder2 = device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: Some("arrow_aabb ... ") });
+
+                log::info!("self.arrow_aabb_params = {:?}", self.arrow_aabb_params);
 
                 queue.write_buffer(
                     &self.arrow_params_buffer,
                     0,
                     bytemuck::cast_slice(&[self.arrow_aabb_params])
                     );
+
+                queue.submit(Some(encoder2.finish()));
+
+                let mut encoder_arrow_aabb = device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: Some("arrow_aabb ... ") });
+
+                //++ self.arrow_aabb_params.iterator_end_index = self.arrow_aabb_params.iterator_start_index + std::cmp::min(number_of_elements, safe_number_of_dispatches * v_per_dispatch);
 
                 self.aabb_pipeline_wrapper.dispatch(
                     &vec![(0, &self.aabb_bind_group)],
@@ -262,14 +282,14 @@ impl PrimitiveProcessor {
 
                 // println!("local_dispatch == {}", local_dispatch);
 
-                queue.submit(Some(encoder_arrow_aabb.finish()));
-
+                // queue.submit(Some(encoder_arrow_aabb.finish()));
 
                 let draw_count = number_of_elements * vertices_per_elem;
 
-                let mut encoder_arrow_rendering = device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: Some("arrow rendering ... ") });
+                // let mut encoder_arrow_rendering = device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: Some("ArrowAABB render encoder ") });
 
-                draw(&mut encoder_arrow_rendering,
+                log::info!("DRAW START {:?} ", draw_count);
+                draw(&mut encoder_arrow_aabb,
                      &view,
                      Some(depth_texture),
                      &vec![draw_bind_group],
@@ -282,11 +302,16 @@ impl PrimitiveProcessor {
 
                 if *clear { *clear = false; }
 
+                //queue.submit(Some(encoder_arrow_rendering.finish()));
+                queue.submit(Some(encoder_arrow_aabb.finish()));
+                // queue.submit(Some(encoder_arrow_rendering.finish()));
+                log::info!("DRAW END {:?} ", draw_count);
+
                 // Decrease the total count of elements.
                 log::info!("items_to_proces :: {:?}. Draw count :: {:?}", items_to_process, draw_count);
                 items_to_process = items_to_process - number_of_elements;
+                log::info!("items_to_proces_after :: {:?}. Draw count :: {:?}", items_to_process, draw_count);
 
-                queue.submit(Some(encoder_arrow_rendering.finish()));
 
                 self.arrow_aabb_params.iterator_start_index = self.arrow_aabb_params.iterator_end_index; // + items_to_process;
             }
@@ -303,5 +328,24 @@ impl PrimitiveProcessor {
             &[*aabb],
             &self.aabb_buffer,
             (offset * std::mem::size_of::<AABB>() as u32).into());
+    }
+
+    pub fn append_aabbs(&self, device: &wgpu::Device, queue: &wgpu::Queue, aabb: &Vec<AABB>) {
+        add_data::<AABB>(
+            device,
+            queue,
+            &aabb,
+            &self.aabb_buffer,
+            0);
+    }
+    pub fn insert_arrow(&self, device: &wgpu::Device, queue: &wgpu::Queue, arrow: &Arrow, offset: u32) {
+        log::info!("PrimitiveProcessor::insert_arrow");
+        add_data::<Arrow>(
+            device,
+            queue,
+            &[*arrow],
+            &self.arrow_buffer,
+            (offset * std::mem::size_of::<Arrow>() as u32).into());
+        log::info!("PrimitiveProcessor::insert_arrow Done");
     }
 }

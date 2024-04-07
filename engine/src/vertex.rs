@@ -35,6 +35,7 @@ pub fn create_vertex_attributes(formats: &Vec<wgpu::VertexFormat>) -> (u64, Vec<
                 wgpu::VertexFormat::Sint32x2 => 2 * std::mem::size_of::<i32>() as u64,
                 wgpu::VertexFormat::Sint32x3 => 3 * std::mem::size_of::<i32>() as u64,
                 wgpu::VertexFormat::Sint32x4 => 4 * std::mem::size_of::<i32>() as u64,
+                wgpu::VertexFormat::Unorm10_10_10_2 => 4 * std::mem::size_of::<i32>() as u64, // Check this later
                 wgpu::VertexFormat::Float64
                 | wgpu::VertexFormat::Float64x2
                 | wgpu::VertexFormat::Float64x3

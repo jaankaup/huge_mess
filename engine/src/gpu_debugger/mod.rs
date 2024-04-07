@@ -127,12 +127,27 @@ impl GpuDebugger {
 
     pub fn add_aabb(&self, device: &wgpu::Device, queue: &wgpu::Queue, aabb: &AABB) {
 
+        log::info!("updating aabb count histogram");
         let mut histogram_values = self.histogram_element_counter.get_values(device, queue);
         histogram_values[2] += 1;
-
+        self.histogram_element_counter.set_values_cpu_version(device, queue, &histogram_values);
         self.primitive_processor.append_aabb(device, queue, aabb, histogram_values[2]);
+    }
 
-        self.histogram_element_counter.set_values_cpu_version(queue, &histogram_values);
+    pub fn add_aabbs(&self, device: &wgpu::Device, queue: &wgpu::Queue, aabb: &Vec<AABB>) {
+        let mut histogram_values = self.histogram_element_counter.get_values(device, queue);
+        histogram_values[2] += aabb.len() as u32;
+        self.histogram_element_counter.set_values_cpu_version(device, queue, &histogram_values);
+        self.primitive_processor.append_aabbs(device, queue, aabb);
+    }
+
+    pub fn add_arrow(&self, device: &wgpu::Device, queue: &wgpu::Queue, arrow: &Arrow) {
+
+        log::info!("updating arrow count histogram");
+        let mut histogram_values = self.histogram_element_counter.get_values(device, queue);
+        histogram_values[1] += 1;
+        self.histogram_element_counter.set_values_cpu_version(device, queue, &histogram_values);
+        self.primitive_processor.insert_arrow(device, queue, arrow, histogram_values[1]);
     }
 
     pub fn render(&mut self,
@@ -154,6 +169,11 @@ impl GpuDebugger {
         let total_number_of_arrows = elem_counter[1];
         let total_number_of_aabbs = elem_counter[2];
         let total_number_of_aabb_wires = elem_counter[3];
+
+        log::info!("total_number_of_chars == {:?}",total_number_of_chars);
+        log::info!("total_number_of_arrows == {:?}",total_number_of_arrows);
+        log::info!("total_number_of_aabbs == {:?}",total_number_of_aabbs);
+        log::info!("total_number_of_aabb_wires == {:?}",total_number_of_aabb_wires);
 
         self.primitive_processor.render(
             device,

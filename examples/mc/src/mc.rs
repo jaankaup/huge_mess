@@ -204,7 +204,7 @@ impl Application for McApp {
         context.queue.submit(Some(encoder.finish()));
 
         // Reset counter.
-        self.marching_cubes.reset_counter_value(&context.queue);
+        self.marching_cubes.reset_counter_value(&context.device, &context.queue);
     }
 
     /// Resize window.

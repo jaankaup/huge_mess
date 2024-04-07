@@ -41,8 +41,8 @@ impl MarchingCubes {
     pub fn get_draw_indirect_buffer(&self) -> &wgpu::Buffer {
         &self.indirect_buffer
     }
-    pub fn reset_counter_value(&self, queue: &wgpu::Queue) {
-        self.buffer_counter.set_values_cpu_version(queue, &vec![0]);
+    pub fn reset_counter_value(&self, device: &wgpu::Device, queue: &wgpu::Queue) {
+        self.buffer_counter.set_values_cpu_version(device, queue, &vec![0]);
         
         queue.write_buffer(
             &self.indirect_buffer,

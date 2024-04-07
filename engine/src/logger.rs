@@ -68,8 +68,10 @@ pub fn initialize_env_logger(module_levels: &Vec<(String, LevelFilter)>) {
         env_logger
             .filter_level(log::LevelFilter::Info)
             .filter_module("wgpu_core", log::LevelFilter::Info)
-            .filter_module("wgpu_hal", log::LevelFilter::Error)
-            .filter_module("naga", log::LevelFilter::Error)
+            .filter_module("wgpu_hal", log::LevelFilter::Info)
+            .filter_module("naga", log::LevelFilter::Info)
+            //.filter_module("wgpu_hal", log::LevelFilter::Error)
+            //.filter_module("naga", log::LevelFilter::Error)
             .parse_default_env().init();
     }
 }

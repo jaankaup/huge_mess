@@ -164,7 +164,8 @@ impl ComputePipelineWrapper {
             label: label,
             layout: Some(&layout),
             module: &module,
-            entry_point: entry_point //"main",
+            entry_point: entry_point, //"main",
+            constants: &Default::default(),
         });
 
         Self {

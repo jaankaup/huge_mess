@@ -1,3 +1,4 @@
+use engine::gpu_debugger::primitive_processor::Arrow;
 use std::mem::transmute;
 use engine::gpu_debugger::primitive_processor::AABB;
 use engine::gpu_debugger::GpuDebugger;
@@ -37,6 +38,7 @@ struct AabbApp {
     gpu_debugger: GpuDebugger,
     some_counter: u32,
     y_counter: u32,
+    visited: bool,
 }
 
 impl Application for AabbApp {
@@ -51,7 +53,7 @@ impl Application for AabbApp {
         // Create camera.
         let mut camera = Camera::new(surface.config().width as f32,
                                      surface.config().height as f32,
-                                     (15.0, 12.0, -18.0),
+                                     (-15.0, 12.0, 28.0),
                                      (0.0, 0.0, 0.0)
         );
         camera.set_rotation_sensitivity(1.0);
@@ -65,7 +67,7 @@ impl Application for AabbApp {
         });
 
         const MAX_NUMBER_OF_ARROWS:     u32 = 40960;
-        const MAX_NUMBER_OF_AABBS:      u32 = 262144;
+        const MAX_NUMBER_OF_AABBS:      u32 = 1000000; // 262144;
         const MAX_NUMBER_OF_AABB_WIRES: u32 = 40960;
         const MAX_NUMBER_OF_CHARS:      u32 = 262144;
 
@@ -83,6 +85,21 @@ impl Application for AabbApp {
                 4000,
                 64);
 
+        // let mut aabb_grid: Vec<AABB> = Vec::new();
+
+        // for i in 0..300 {
+        //     for j in 0..300 {
+        //         let color: f32 = if (i & 1 == 0) ^ (j & 1 == 0) { unsafe {transmute::<u32, f32>(0xFFFF00FF)} } else { unsafe {transmute::<u32, f32>(0x1100FFFF)}};
+        //         aabb_grid.push(
+        //         AABB {
+        //             min: [i as f32 * 4.0 + 0.1, 1.0, j as f32 * 4.0 + 0.1, color],
+        //             max: [i as f32 * 4.0 + 4.1, 1.2, j as f32 * 4.0 + 4.1, color],
+        //         });
+        //     }
+        // }
+
+        // gpu_debugger.add_aabbs(&context.device, &context.queue, &aabb_grid);
+
         log::info!("Finished initialization.");
 
         Self {
@@ -91,7 +108,8 @@ impl Application for AabbApp {
             draw_buffer: draw_buffer,
             gpu_debugger: gpu_debugger,
             some_counter: 0,
-            y_counter: 0,
+            y_counter: 2,
+            visited: false,
         }
     }
 
@@ -129,14 +147,44 @@ impl Application for AabbApp {
     fn update(&mut self, context: &WGPUContext, input_cache: &InputCache) {
         self.camera.update_from_input(&context.queue, &input_cache);
 
-        self.some_counter += 1;
-        if self.some_counter == 100 { self.some_counter = 0; self.y_counter += 1; }
-
         log::info!("Add aabb");
+        let color: f32 = if (self.some_counter & 1 == 0) ^ (self.y_counter & 1 == 0) { unsafe {transmute::<u32, f32>(0xFFFF00FF)} } else { unsafe {transmute::<u32, f32>(0x1100FFFF)}};
         self.gpu_debugger.add_aabb(&context.device, &context.queue, &AABB {
-            min: [self.some_counter as f32 * 5.0 + 1.0, 1.0, self.y_counter as f32 * 5.0 + 1.0, unsafe {transmute::<u32, f32>(0xFFFF00FF)}],
-            max: [self.some_counter as f32 * 5.0 + 4.0, 4.0, self.y_counter as f32 * 5.0 + 4.0, unsafe {transmute::<u32, f32>(0xFFFF00FF)}],
+            min: [self.some_counter as f32 * 4.0 + 0.1, 1.0, self.y_counter as f32 * 4.0 + 0.1, color],
+            max: [self.some_counter as f32 * 4.0 + 4.1, 1.2, self.y_counter as f32 * 4.0 + 4.1, color],
         });
+        log::info!("Add arrow");
+        self.gpu_debugger.add_arrow(&context.device, &context.queue, &Arrow {
+            start_pos: [self.some_counter as f32 * 5.0 + 1.0, 8.0, self.y_counter as f32 * 5.0 + 1.0, 1.0],
+            end_pos: [self.some_counter as f32 * 5.0 + 4.0, 122.0, self.y_counter as f32 * 5.0 + 4.0, 1.0],
+            color: 0xFF0000FF,
+            size: 0.5,
+            _padding: [0,0],
+        });
+        self.some_counter += 1;
+        // if self.some_counter < 2 { 
+        //     if (self.y_counter < 1) {
+        //         log::info!("Add arrow");
+        //         self.gpu_debugger.add_arrow(&context.device, &context.queue, &Arrow {
+        //             start_pos: [self.some_counter as f32 * 5.0 + 1.0, 8.0, self.y_counter as f32 * 5.0 + 1.0, 1.0],
+        //             end_pos: [self.some_counter as f32 * 5.0 + 4.0, 122.0, self.y_counter as f32 * 5.0 + 4.0, 1.0],
+        //             color: 0xFF0000FF,
+        //             size: 0.5,
+        //             _padding: [0,0],
+        //         });
+        //     }
+        //     // else {
+        //     //     log::info!("Add aabb");
+        //     //     let color: f32 = if (self.some_counter & 1 == 0) ^ (self.y_counter & 1 == 0) { unsafe {transmute::<u32, f32>(0xFFFF00FF)} } else { unsafe {transmute::<u32, f32>(0x1100FFFF)}};
+        //     //     self.gpu_debugger.add_aabb(&context.device, &context.queue, &AABB {
+        //     //         min: [self.some_counter as f32 * 4.0 + 0.1, 1.0, self.y_counter as f32 * 4.0 + 0.1, color],
+        //     //         max: [self.some_counter as f32 * 4.0 + 4.1, 1.2, self.y_counter as f32 * 4.0 + 4.1, color],
+        //     //     });
+        //     // }
+
+        //     self.some_counter += 1;
+        //     if self.some_counter == 2 { self.some_counter = 0; self.y_counter += 1; if self.y_counter > 2 { self.y_counter = 0; }  }
+        // }
     }
 
     fn close(&mut self, _wgpu_context: &WGPUContext){ 

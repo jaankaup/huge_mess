@@ -3,6 +3,7 @@ resolver = "2"
 members = [
     "engine",
     "dioxus_stuff",
+    "json_stuff",
     "examples",
 ]
 
@@ -18,9 +19,9 @@ path = "./engine"
 [workspace.dependencies]
 
 # Dioxus dependencies
-dioxus = "0.4"
-dioxus-desktop = "0.4"
-dioxus-html = "0.4"
+dioxus = "0.5"
+dioxus-desktop = "0.5"
+dioxus-html = "0.5"
 
 bytemuck = { version = "1.14", features = ["derive"] }
 log = "0.4"
@@ -28,8 +29,9 @@ png = "0.17.10"
 raw-window-handle = "0.6"
 ron = "0.8"
 serde = "1"
-serde_json = "1.0.108"
-wgpu = { git = "https://github.com/gfx-rs/wgpu", rev="004e3efe84a320d9331371ed31fa50baa2414911" }
+serde_json = "1.0.114"
+wgpu = { git = "https://github.com/gfx-rs/wgpu", rev="911baf3e8cb9308a64392fcd810845532191f817" }
+# wgpu = { git = "https://github.com/gfx-rs/wgpu", rev="136ca1500e33959beb2a56a9143ec1d7d95c704c" }
 version = "0.29"
 thiserror = "1"
 cfg-if = "1"

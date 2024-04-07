@@ -256,7 +256,7 @@ impl CharProcessor {
                 bytemuck::cast_slice(&[cp])
                 );
 
-            self.dispatch_counter_histogram.reset_all_cpu_version(queue, 0);
+            self.dispatch_counter_histogram.reset_all_cpu_version(device, queue, 0);
 
             // Dispatch char pre processor.
             let mut encoder_char_preprocessor = device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: Some("char preprocessor encoder") });

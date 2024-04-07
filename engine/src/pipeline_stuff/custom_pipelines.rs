@@ -51,10 +51,12 @@ pub fn default_render_shader_v4n4_camera_light_tex2(device: &wgpu::Device, sc_de
 
     // Fragment state
     let binding = [Some(wgpu::ColorTargetState::from(sc_desc.format))];
+    let constants = Default::default();
 
     let fragment_state = Some(wgpu::FragmentState {
            module: wgsl_module,
            entry_point: "fs_main",
+           constants: &constants,
            targets: &binding,
        });
 
@@ -105,10 +107,12 @@ pub fn default_render_shader_v3c1(device: &wgpu::Device, sc_desc: &wgpu::Surface
 
     // Fragment state
     let binding = [Some(wgpu::ColorTargetState::from(sc_desc.format))];
+    let constants = Default::default();
 
     let fragment_state = Some(wgpu::FragmentState {
            module: wgsl_module,
            entry_point: "fs_main",
+           constants: &constants,
            targets: &binding,
        });
 
@@ -195,10 +199,13 @@ pub fn render_v4n4_camera_light_other_params(device: &wgpu::Device, sc_desc: &wg
 
     // Fragment state
     let binding = [Some(wgpu::ColorTargetState::from(sc_desc.format))];
+    let constants = Default::default();
+    //let binding = &mut Default::default();
 
     let fragment_state = Some(wgpu::FragmentState {
            module: wgsl_module,
            entry_point: "fs_main",
+           constants: &constants,
            targets: &binding,
        });
 
