@@ -155,15 +155,16 @@ impl Application for AabbApp {
         });
         log::info!("Add arrow");
         self.gpu_debugger.add_arrow(&context.device, &context.queue, &Arrow {
-            start_pos: [self.some_counter as f32 * 5.0 + 1.0, 8.0, self.y_counter as f32 * 5.0 + 1.0, 1.0],
-            end_pos: [self.some_counter as f32 * 5.0 + 4.0, 122.0, self.y_counter as f32 * 5.0 + 4.0, 1.0],
+            start_pos: [self.some_counter as f32 * 4.0 + 1.0, 8.0, self.y_counter as f32 * 4.0 + 1.0, 1.0],
+            end_pos: [self.some_counter as f32 * 4.0 + 4.0, 122.0, self.y_counter as f32 * 4.0 + 4.0, 1.0],
             color: 0xFF0000FF,
             size: 0.5,
             _padding: [0,0],
         });
         self.some_counter += 1;
-        // if self.some_counter < 2 { 
-        //     if (self.y_counter < 1) {
+        if self.some_counter == 128 { self.some_counter = 0; self.y_counter += 1;  }
+        // if self.some_counter < 16 { 
+        //     if (self.y_counter < 16) {
         //         log::info!("Add arrow");
         //         self.gpu_debugger.add_arrow(&context.device, &context.queue, &Arrow {
         //             start_pos: [self.some_counter as f32 * 5.0 + 1.0, 8.0, self.y_counter as f32 * 5.0 + 1.0, 1.0],
@@ -173,14 +174,14 @@ impl Application for AabbApp {
         //             _padding: [0,0],
         //         });
         //     }
-        //     // else {
-        //     //     log::info!("Add aabb");
-        //     //     let color: f32 = if (self.some_counter & 1 == 0) ^ (self.y_counter & 1 == 0) { unsafe {transmute::<u32, f32>(0xFFFF00FF)} } else { unsafe {transmute::<u32, f32>(0x1100FFFF)}};
-        //     //     self.gpu_debugger.add_aabb(&context.device, &context.queue, &AABB {
-        //     //         min: [self.some_counter as f32 * 4.0 + 0.1, 1.0, self.y_counter as f32 * 4.0 + 0.1, color],
-        //     //         max: [self.some_counter as f32 * 4.0 + 4.1, 1.2, self.y_counter as f32 * 4.0 + 4.1, color],
-        //     //     });
-        //     // }
+        //     else {
+        //         log::info!("Add aabb");
+        //         let color: f32 = if (self.some_counter & 1 == 0) ^ (self.y_counter & 1 == 0) { unsafe {transmute::<u32, f32>(0xFFFF00FF)} } else { unsafe {transmute::<u32, f32>(0x1100FFFF)}};
+        //         self.gpu_debugger.add_aabb(&context.device, &context.queue, &AABB {
+        //             min: [self.some_counter as f32 * 4.0 + 0.1, 1.0, self.y_counter as f32 * 4.0 + 0.1, color],
+        //             max: [self.some_counter as f32 * 4.0 + 4.1, 1.2, self.y_counter as f32 * 4.0 + 4.1, color],
+        //         });
+        //     }
 
         //     self.some_counter += 1;
         //     if self.some_counter == 2 { self.some_counter = 0; self.y_counter += 1; if self.y_counter > 2 { self.y_counter = 0; }  }

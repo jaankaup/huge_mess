@@ -92,12 +92,12 @@ impl GpuDebugger {
         let render_param_buffer = RenderParamBuffer::create(device, 1.0);
         let light = LightBuffer::create(
             device,
-            [25.0, 55.0, 25.0], // pos
+            [5.0, 5.0, 5.0], // pos
             [25, 25, 130],  // spec
             [255,200,255], // light
             155.0,
             0.35,
-            0.0013
+            0.00013
             );
 
         let v3c1_bind_group = v3c1.create_bind_group(device, &vec![&camera_buffer.as_entire_binding()], 0);
