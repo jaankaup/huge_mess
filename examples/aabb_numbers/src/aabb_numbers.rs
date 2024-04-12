@@ -157,7 +157,8 @@ impl Application for AabbApp {
         self.gpu_debugger.add_arrow(&context.device, &context.queue, &Arrow {
             start_pos: [self.some_counter as f32 * 4.0 + 1.0, 8.0, self.y_counter as f32 * 4.0 + 1.0, 1.0],
             end_pos: [self.some_counter as f32 * 4.0 + 4.0, 122.0, self.y_counter as f32 * 4.0 + 4.0, 1.0],
-            color: 0xFF0000FF,
+            //color: 0xFF0000FF,
+            color: if (self.some_counter & 1 == 0) ^ (self.y_counter & 1 == 0) {0xFFFF00FF} else {0x1100FFFF},
             size: 0.5,
             _padding: [0,0],
         });
