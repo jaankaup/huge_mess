@@ -11,7 +11,7 @@ pub fn add_data<T: Pod>(
     buffer: &wgpu::Buffer,
     offset: BufferAddress) {
 
-    log::info!("Writing data: offset {:?}", offset);
+    // log::info!("Writing data: offset {:?}", offset);
     let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: Some("Add Data") });
     queue.write_buffer(buffer, offset, bytemuck::cast_slice(t));
     queue.submit(Some(encoder.finish()));

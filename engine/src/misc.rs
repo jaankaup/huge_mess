@@ -29,3 +29,21 @@ pub fn udiv_up_32(x: u32, y: u32) -> u32 {
 pub fn udiv_up_safe32(x: u32, y: u32) -> u32 {
   if y == 0 { 0 } else { (x + y - 1) / y }
 }
+
+
+// Map index to 3d coordinate (hexahedron). The x and y dimensions are chosen. The curve goes from
+// left to right, row by row.
+// The z direction is "unlimited". TODO: add check for z-dimension.
+pub fn index_to_uvec3(index: u32, dim_x: u32, dim_y: u32) -> [u32 ; 3] {
+    let mut x = index;
+    let wh    = dim_x * dim_y;
+    let z     = x / wh;
+    x         = x - z * wh;
+    let y     = x / dim_x;
+    x         = x - y * dim_x;
+    [x, y, z]
+}
+
+pub fn uvec3_to_index(x: u32, y: u32, z: u32, dimX: u32, dimY: u32) -> u32 {
+    x + y * dimX + z * dimX * dimY 
+}

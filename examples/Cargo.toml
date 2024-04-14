@@ -13,6 +13,7 @@ winit.workspace = true
 log.workspace = true
 bytemuck.workspace = true
 cgmath.workspace = true
+rand.workspace = true
 
 [[example]]
 name = "smoke"
@@ -25,3 +26,7 @@ path = "mc/src/mc.rs"
 [[example]]
 name = "aabb"
 path = "aabb_numbers/src/aabb_numbers.rs"
+
+[[example]]
+name = "wfc_test"
+path = "wfc_test/src/main.rs"
