@@ -31,7 +31,6 @@ use wgpu::TextureView;
 use engine::core::SurfaceWrapper;
 use engine::basic_loop::BasicLoop;
 use engine::core::run;
-// fn vs_main(@location(0) pos: vec3<f32>, @location(1) col: u32) -> FragmentInput {
 use engine::core::WGPUContext;
 use engine::core::Application;
 use engine::input_cache::InputCache;
@@ -41,8 +40,9 @@ use engine::logger::initialize_env_logger;
 use log::LevelFilter;
 mod configuration; 
 
-const x_dim: u32 = 32;
-const y_dim: u32 = 32;
+const x_dim: u32 = 2;
+const y_dim: u32 = 2;
+const negative: f32 = -1.0;
 
 #[derive(PartialOrd, Ord, Eq, PartialEq, Debug)]
 struct BandCell {
@@ -50,8 +50,7 @@ struct BandCell {
     pub index: u32,
 }
 
-/// Marching cubes application.
-struct WfcApp {
+struct WfcPart2App {
     depth_texture: Option<Tex>,
     camera: Camera,
     draw_buffer: wgpu::Buffer,
@@ -82,14 +81,14 @@ fn create_aabbs(wfc_block: &WfcData, block_size: f32, base_position: [f32 ; 3], 
         let mut scaled = [x as f32 * factor, y as f32 * factor, z as f32 * factor];
         result.push(
             AABB {
-                min: [scaled[0] + base_position[0] * 2.0,          scaled[2] + base_position[2] * 2.0         , scaled[1] + base_position[1] * 2.0 ,         color],
-                max: [scaled[0] + base_position[0] * 2.0 + factor, scaled[2] + base_position[2] * 2.0 + factor * 5.0, scaled[1] + base_position[1] * 2.0 + factor, color],
+                min: [scaled[0] + base_position[0],          (scaled[2] + base_position[2])      , negative * (base_position[1] + scaled[1])         , color],
+                max: [scaled[0] + base_position[0] + factor, (scaled[2] + base_position[2]) + 5.0, negative * (base_position[1] + factor + scaled[1]), color],
             });
     }
     result
 }
 
-impl WfcApp {
+impl WfcPart2App {
     // fn satisfies(&self, 
     fn check_alternatives(&mut self, index: u32) -> Vec<WfcData> {
         let neighbors = self.find_neigbors(index).iter().map(|x| (self.scene_nodes[x.0 as usize].clone(), x.1)).collect::<Vec<_>>();
@@ -116,27 +115,32 @@ impl WfcApp {
 
         // Left
         if x_minus >= 0 {
-            result.push((uvec3_to_index(x_minus as u32, coordinate[1], 0, x_dim, y_dim) , Direction::Left)); 
+            //result.push((uvec3_to_index(x_minus as u32, coordinate[1], 0, x_dim, y_dim) , Direction::Left)); 
+            result.push((uvec3_to_index(x_minus as u32, coordinate[1], 0, x_dim, y_dim) , Direction::Right)); 
         }
         // Right
         if x_plus < x_dim.try_into().unwrap() {
-            result.push((uvec3_to_index(x_plus as u32, coordinate[1], 0, x_dim, y_dim), Direction::Right));
+            //result.push((uvec3_to_index(x_plus as u32, coordinate[1], 0, x_dim, y_dim), Direction::Right));
+            result.push((uvec3_to_index(x_plus as u32, coordinate[1], 0, x_dim, y_dim), Direction::Left));
         }
         // Up
         if y_minus >= 0 {
             result.push((uvec3_to_index(coordinate[0], y_minus as u32 , 0, x_dim, y_dim), Direction::Top));
+            //result.push((uvec3_to_index(coordinate[0], y_minus as u32 , 0, x_dim, y_dim), Direction::Bottom));
         }
         // Down
         if y_plus < y_dim.try_into().unwrap() {
             result.push((uvec3_to_index(coordinate[0], y_plus as u32 , 0, x_dim, y_dim), Direction::Bottom));
+            //result.push((uvec3_to_index(coordinate[0], y_plus as u32 , 0, x_dim, y_dim), Direction::Top));
         }
         result
     }
 
     fn find_next_known(&mut self, context: &WGPUContext) -> Option<u32> {
         //if self.band.len() > 0 {
-        let color: f32 = unsafe {transmute::<u32, f32>(0xFF0000FF)};
-        let color_other: f32 = unsafe {transmute::<u32, f32>(0x110011FF)};
+        //
+        let color: f32 = if (self.some_counter & 1 == 0) ^ (self.y_counter & 1 == 0) { unsafe {transmute::<u32, f32>(0xFFFF00FF)} } else { unsafe {transmute::<u32, f32>(0x1100FFFF)}};
+        let color_other: f32 = if (self.some_counter & 1 == 0) ^ (self.y_counter & 1 == 0) { unsafe {transmute::<u32, f32>(0x111110FF)} } else { unsafe {transmute::<u32, f32>(0x05100FFF)}};
         let mut next_id: Option<u32> = None;
 
         if let Some(next_known) = self.band.pop() {
@@ -155,7 +159,7 @@ impl WfcApp {
 
                 // self.scene_nodes[next_known.0.index as usize].as_mut().unwrap().wfc_data = next_cell.wfc_data.clone();
                 // next_cell.wfc_data.data = next_cell.alternatives[r as usize].data.clone();
-                let aabbs = create_aabbs(&next_cell.wfc_data, 2.0, [coordinate[0] as f32, coordinate[1] as f32, 0.0], color);
+                let aabbs = create_aabbs(&next_cell.wfc_data, 2.0, [coordinate[0] as f32 * 2.0, coordinate[1] as f32 * 2.0, 0.0], color);
                 for a in aabbs.iter() {
                     self.gpu_debugger.add_aabb(&context.device, &context.queue, &a);
                 }
@@ -163,8 +167,8 @@ impl WfcApp {
                 let aabb = AABB {
                     // min: [coordinate[0] as f32 * 5.0 , 2.2, coordinate[1] as f32 * 5.0, color_other],
                     // max: [coordinate[0] as f32 * 5.0 , 2.2, coordinate[1] as f32 * 5.0 + 2.0, color_other],
-                    min: [coordinate[0] as f32 * 2.0      , 0.2,  coordinate[1] as f32 * 2.0, color_other],
-                    max: [coordinate[0] as f32 * 2.0 + 2.0, 0.2,  coordinate[1] as f32 * 2.0 + 2.0, color_other],
+                    min: [coordinate[0] as f32 * 2.0      , 0.2, negative * (coordinate[1] as f32 * 2.0), color_other],
+                    max: [coordinate[0] as f32 * 2.0 + 2.0, 0.2, negative * (coordinate[1] as f32 * 2.0 + 2.0), color_other],
                 };
                 self.gpu_debugger.add_aabb(&context.device, &context.queue, &aabb);
                 // let aabb = AABB {
@@ -177,13 +181,15 @@ impl WfcApp {
                 println!("coordinate[0] = {:?}, coordinate[1] = {:?}", coordinate[0] as f32, coordinate[1] as f32);
             }
 
+            // println!("Next cell: {:?}", next_cell);
 
-                // self.gpu_debugger.add_aabb(&context.device, &context.queue, &AABB {
-                //     min: [self.some_counter as f32 * 4.0 + 0.1, 1.0, self.y_counter as f32 * 4.0 + 0.1, color],
-                //     max: [self.some_counter as f32 * 4.0 + 4.1, 1.2, self.y_counter as f32 * 4.0 + 4.1, color],
-                // });
 
-            }
+            // self.gpu_debugger.add_aabb(&context.device, &context.queue, &AABB {
+            //     min: [self.some_counter as f32 * 4.0 + 0.1, 1.0, self.y_counter as f32 * 4.0 + 0.1, color],
+            //     max: [self.some_counter as f32 * 4.0 + 4.1, 1.2, self.y_counter as f32 * 4.0 + 4.1, color],
+            // });
+
+        }
         //}
         next_id
     }
@@ -206,114 +212,14 @@ impl WfcApp {
                     wfc_data: WfcData::init(5,5,1),
                     alternatives: alternatives,
                 });
-                //     neighbor.as_mut().unwrap().tag = WfcTag::Band;
-                //     neighbor.as_mut().unwrap().index = n.0;
-                //     neighbor.as_mut().unwrap().wfc_data = WfcData::init(5,5,1);
-                //     neighbor.as_mut().unwrap().alternatives = alternatives;
-                // Add also to narrow band.
-                // println!("Adding neighbor: {:?}", n.0);
                 self.band.push(Reverse(BandCell { alternatives: alternatives_count as u32, index: n.0, }));
             }
         }
         println!("BANDI SIZE {:?}", self.band.len());
-
-        // let coordinate = index_to_uvec3(index, x_dim, y_dim);
-        // let x_minus = coordinate[0] as i32 - 1;
-        // let x_plus = coordinate[0] as i32 + 1;
-        // let y_minus = coordinate[1] as i32 - 1;
-        // let y_plus = coordinate[1] as i32 + 1;
-
-        // // Red
-        // let color_left: f32 = unsafe {transmute::<u32, f32>(0xFF0000FF)};
-        // // Blue
-        // let color_right: f32 = unsafe {transmute::<u32, f32>(0x0000FFFF)};
-        // // Green
-        // let color_up: f32 = unsafe {transmute::<u32, f32>(0x00FF00FF)};
-        // // Yellow
-        // let color_down: f32 = unsafe {transmute::<u32, f32>(0xFFFF00FF)};
-
-        // // Left
-        // if x_minus >= 0 {
-        //     let c_ind = uvec3_to_index(x_minus as u32, coordinate[1], 0, x_dim, y_dim);
-        //     let neighbor = &self.scene_nodes[c_ind as usize];
-        //     // Add to band. 
-        //     if neighbor.is_none() {
-        //         self.scene_nodes[c_ind as usize] = Some(SceneNode {
-        //             tag: WfcTag::Band,
-        //             index: c_ind,
-        //             wfc_data: WfcData::init(5,5,1),
-        //         });
-        //         let aabb = AABB {
-        //             min: [x_minus as f32, 0.2, coordinate[1] as f32, color_left],
-        //             max: [x_minus as f32 + 1.0, 0.2, coordinate[1] as f32 + 1.0, color_left],
-        //         };
-        //         self.gpu_debugger.add_aabb(&context.device, &context.queue, &aabb);
-        //     }
-        // }
-        // // Right
-        // if x_plus < x_dim.try_into().unwrap() {
-        //     let c_ind = uvec3_to_index(x_plus as u32, coordinate[1], 0, x_dim, y_dim);
-        //     let neighbor = &self.scene_nodes[c_ind as usize];
-        //     // Add to band. 
-        //     if neighbor.is_none() {
-        //         self.scene_nodes[c_ind as usize] = Some(SceneNode {
-        //             tag: WfcTag::Band,
-        //             index: c_ind,
-        //             wfc_data: WfcData::init(5,5,1),
-        //         });
-        //         let aabb = AABB {
-        //             min: [x_plus as f32, 0.2, coordinate[1] as f32, color_right],
-        //             max: [x_plus as f32 + 1.0, 0.2, coordinate[1] as f32 + 1.0, color_right],
-        //         };
-        //         self.gpu_debugger.add_aabb(&context.device, &context.queue, &aabb);
-        //     }
-        // }
-
-        // // Up
-        // if y_minus >= 0 {
-        //     let c_ind = uvec3_to_index(coordinate[0], y_minus as u32 , 0, x_dim, y_dim);
-        //     let neighbor = &self.scene_nodes[c_ind as usize];
-        //     // Add to band. 
-        //     if neighbor.is_none() {
-        //         self.scene_nodes[c_ind as usize] = Some(SceneNode {
-        //             tag: WfcTag::Band,
-        //             index: c_ind,
-        //             wfc_data: WfcData::init(5,5,1),
-        //         });
-        //         let aabb = AABB {
-        //             min: [coordinate[0] as f32, 0.2, y_minus as f32, color_up],
-        //             max: [coordinate[0] as f32 + 1.0, 0.2, y_minus as f32 + 1.0, color_up],
-        //         };
-        //         self.gpu_debugger.add_aabb(&context.device, &context.queue, &aabb);
-        //     }
-        //     else {
-        //     }
-        // }
-
-        // // Down
-        // if y_plus < y_dim.try_into().unwrap() {
-        //     let c_ind = uvec3_to_index(coordinate[0], y_plus as u32 , 0, x_dim, y_dim);
-        //     let neighbor = &self.scene_nodes[c_ind as usize];
-        //     // Add to band. 
-        //     if neighbor.is_none() {
-        //         self.scene_nodes[c_ind as usize] = Some(SceneNode {
-        //             tag: WfcTag::Band,
-        //             index: c_ind,
-        //             wfc_data: WfcData::init(5,5,1),
-        //         });
-        //         let aabb = AABB {
-        //             min: [coordinate[0] as f32, 0.2, y_plus as f32, color_down],
-        //             max: [coordinate[0] as f32 + 1.0, 0.2, y_plus as f32 + 1.0, color_down],
-        //         };
-        //         self.gpu_debugger.add_aabb(&context.device, &context.queue, &aabb);
-        //     }
-        //     else {
-        //     }
-        // }
     }
 }
 
-impl Application for WfcApp {
+impl Application for WfcPart2App {
 
     /// Initialize application.
     fn init(context: &WGPUContext, surface: &SurfaceWrapper) -> Self {
@@ -343,51 +249,51 @@ impl Application for WfcApp {
         let test_rotated_again_again = test_rotated_again.rotate90();
         available_blocks.insert(test_rotated_again_again.toString(), test_rotated_again_again.clone());
 
-        test.print();
-        test_rotated.print();
-        test_rotated_again.print();
-        test_rotated_again_again.print();
+        // test.print();
+        // test_rotated.print();
+        // test_rotated_again.print();
+        // test_rotated_again_again.print();
 
-        let mut line = WfcData::init(5,5,1);
-        line.write(0,0,0,1);
-        line.write(1,0,0,1);
-        line.write(2,0,0,1);
-        line.write(3,0,0,1);
-        line.write(4,0,0,1);
+        // let mut line = WfcData::init(5,5,1);
+        // line.write(0,0,0,1);
+        // line.write(1,0,0,1);
+        // line.write(2,0,0,1);
+        // line.write(3,0,0,1);
+        // line.write(4,0,0,1);
 
-        let line_2 = line.rotate90();
-        let line_3 = line_2.rotate90();
-        let line_4 = line_3.rotate90();
+        // let line_2 = line.rotate90();
+        // let line_3 = line_2.rotate90();
+        // let line_4 = line_3.rotate90();
 
-        available_blocks.insert(line.toString(), line.clone());
-        available_blocks.insert(line_2.toString(), line_2.clone());
-        available_blocks.insert(line_3.toString(), line_3.clone());
-        available_blocks.insert(line_4.toString(), line_4.clone());
+        // available_blocks.insert(line.toString(), line.clone());
+        // available_blocks.insert(line_2.toString(), line_2.clone());
+        // available_blocks.insert(line_3.toString(), line_3.clone());
+        // available_blocks.insert(line_4.toString(), line_4.clone());
 
-        let mut line_pah = WfcData::init(5,5,1);
-        line.write(0,0,0,1);
-        line.write(1,0,0,1);
-        line.write(2,0,0,1);
-        line.write(3,0,0,1);
-        line.write(4,0,0,1);
-        line.write(2,0,0,1);
-        line.write(2,1,0,1);
-        line.write(2,2,0,1);
-        line.write(2,3,0,1);
-        line.write(2,4,0,1);
+        // let mut line_pah = WfcData::init(5,5,1);
+        // line.write(0,0,0,1);
+        // line.write(1,0,0,1);
+        // line.write(2,0,0,1);
+        // line.write(3,0,0,1);
+        // line.write(4,0,0,1);
+        // line.write(2,0,0,1);
+        // line.write(2,1,0,1);
+        // line.write(2,2,0,1);
+        // line.write(2,3,0,1);
+        // line.write(2,4,0,1);
 
-        let line_pah_2 = line.rotate90();
-        let line_pah_3 = line_pah_2.rotate90();
-        let line_pah_4 = line_pah_3.rotate90();
+        // let line_pah_2 = line.rotate90();
+        // let line_pah_3 = line_pah_2.rotate90();
+        // let line_pah_4 = line_pah_3.rotate90();
 
-        available_blocks.insert(line_pah.toString(), line_pah.clone());
-        available_blocks.insert(line_pah_2.toString(), line_pah_2.clone());
-        available_blocks.insert(line_pah_3.toString(), line_pah_3.clone());
-        available_blocks.insert(line_pah_4.toString(), line_pah_4.clone());
+        // available_blocks.insert(line_pah.toString(), line_pah.clone());
+        // available_blocks.insert(line_pah_2.toString(), line_pah_2.clone());
+        // available_blocks.insert(line_pah_3.toString(), line_pah_3.clone());
+        // available_blocks.insert(line_pah_4.toString(), line_pah_4.clone());
 
         log::info!("{:?}", available_blocks);
 
-        log::info!("Initializing WfcApp");
+        log::info!("Initializing WfcPart2App");
 
         log::info!("Creating camera.");
 
@@ -499,7 +405,7 @@ impl Application for WfcApp {
         // Once, generate a random seed point.
         if self.once2 {
             let mut rng = rand::thread_rng();
-            let starting_index: u32 = rng.gen_range(0..(32*32)).try_into().unwrap();
+            let starting_index: u32 = rng.gen_range(0..(x_dim*y_dim)).try_into().unwrap();
 
             self.scene_nodes[starting_index as usize] = Some(SceneNode { tag: WfcTag::Known, index: starting_index, wfc_data: WfcData::init(5,5,1), alternatives: Vec::new(), }); 
             self.add_neighbors_to_band(starting_index, context);
@@ -507,8 +413,8 @@ impl Application for WfcApp {
             let color: f32 = unsafe {transmute::<u32, f32>(0x050011FF)};
             let coordinate = index_to_uvec3(starting_index, x_dim, y_dim); 
             let aabb = AABB {
-                min: [coordinate[0] as f32 * 2.0, 0.2, coordinate[1] as f32 * 2.0, color_starting_point],
-                max: [coordinate[0] as f32 * 2.0 + 2.0, 0.2, coordinate[1] as f32 * 2.0 + 2.0, color_starting_point],
+                min: [coordinate[0] as f32 * 2.0, 0.2,       negative * (coordinate[1] as f32 * 2.0), color_starting_point],
+                max: [coordinate[0] as f32 * 2.0 + 2.0, 0.2, negative * (coordinate[1] as f32 * 2.0 + 2.0), color_starting_point],
             };
             self.gpu_debugger.add_aabb(&context.device, &context.queue, &aabb);
 
@@ -522,7 +428,7 @@ impl Application for WfcApp {
             }
             self.scene_nodes[starting_index as usize].as_mut().unwrap().wfc_data = random_data.unwrap(); // next_cell.alternatives[r as usize].data.clone();
             // next_cell.wfc_data.data = next_cell.alternatives[r as usize].data.clone();
-            let aabbs = create_aabbs(&self.scene_nodes[starting_index as usize].as_ref().unwrap().wfc_data, 2.0, [coordinate[0] as f32, coordinate[1] as f32, 0.0], color);
+            let aabbs = create_aabbs(&self.scene_nodes[starting_index as usize].as_ref().unwrap().wfc_data, 2.0, [coordinate[0] as f32 * 2.0, coordinate[1] as f32 * 2.0, 0.0], color);
             for a in aabbs.iter() {
                 self.gpu_debugger.add_aabb(&context.device, &context.queue, &a);
             }
@@ -612,5 +518,5 @@ impl Application for WfcApp {
 fn main() {
 
     initialize_env_logger(&vec![("mc".to_string(), LevelFilter::Info)]);
-    run::<WfcTestFeatures, BasicLoop, WfcApp>("yeah");
+    run::<WfcTestFeatures, BasicLoop, WfcPart2App>("yeah");
 }

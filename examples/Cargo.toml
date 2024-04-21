@@ -15,6 +15,7 @@ bytemuck.workspace = true
 cgmath.workspace = true
 rand.workspace = true
 
+
 [[example]]
 name = "smoke"
 path = "smoke/src/smoke.rs"
@@ -30,3 +31,7 @@ path = "aabb_numbers/src/aabb_numbers.rs"
 [[example]]
 name = "wfc_test"
 path = "wfc_test/src/main.rs"
+
+[[example]]
+name = "wfc_part2"
+path = "wfc_part2/src/main.rs"

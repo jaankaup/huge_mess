@@ -127,7 +127,6 @@ impl GpuDebugger {
 
     pub fn add_aabb(&self, device: &wgpu::Device, queue: &wgpu::Queue, aabb: &AABB) {
 
-        // log::info!("updating aabb count histogram");
         let mut histogram_values = self.histogram_element_counter.get_values(device, queue);
         histogram_values[2] += 1;
         self.histogram_element_counter.set_values_cpu_version(device, queue, &histogram_values);
@@ -143,11 +142,20 @@ impl GpuDebugger {
 
     pub fn add_arrow(&self, device: &wgpu::Device, queue: &wgpu::Queue, arrow: &Arrow) {
 
-        // log::info!("updating arrow count histogram");
         let mut histogram_values = self.histogram_element_counter.get_values(device, queue);
         histogram_values[1] += 1;
         self.histogram_element_counter.set_values_cpu_version(device, queue, &histogram_values);
         self.primitive_processor.insert_arrow(device, queue, arrow, histogram_values[1]-1);
+    }
+
+    pub fn add_arrows(&self, device: &wgpu::Device, queue: &wgpu::Queue, arrows: &Vec<Arrow>) {
+
+        assert!(arrows.len() > 0);
+        let mut histogram_values = self.histogram_element_counter.get_values(device, queue);
+        let count_now = histogram_values[1];
+        histogram_values[1] += arrows.len() as u32;
+        self.histogram_element_counter.set_values_cpu_version(device, queue, &histogram_values);
+        self.primitive_processor.insert_arrows(device, queue, arrows, count_now);
     }
 
     pub fn render(&mut self,

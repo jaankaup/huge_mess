@@ -149,43 +149,7 @@ impl WfcData {
             }
         }
         
-        // Check with cases satifies.
-        // for case in cases.iter() { 
-        //     let wcf = case.1;
-        //     if top.is_some() {
-        //         let top_ref = top.unwrap();
-        //         let top_row = case.1.get_row(0);
-        //         let bottom_row_neighbor = top_ref.get_row(dim_y - 1);
-        //         if top_row != bottom_row_neighbor {
-        //             continue;
-        //         }
-        //     }
-        //     if right.is_some() {
-        //         let right_ref = right.unwrap();
-        //         let rigth_row = case.1.get_column(dim_x - 1);
-        //         let left_row_neighbor = right_ref.get_column(0);
-        //         if rigth_row != left_row_neighbor {
-        //             continue;
-        //         }
-        //     }
-        //     if bottom.is_some() {
-        //         let bottom_ref = bottom.unwrap();
-        //         let bottom_row = case.1.get_row(dim_y - 1);
-        //         let up_row_neighbor = bottom_ref.get_row(0);
-        //         if bottom_row != up_row_neighbor {
-        //             continue;
-        //         }
-        //     }
-        //     if left.is_some() {
-        //         let left_ref = bottom.unwrap();
-        //         let left_row = case.1.get_column(0);
-        //         let right_row_neighbor = left_ref.get_column(dim_x - 1);
-        //         if left_row != right_row_neighbor {
-        //             continue;
-        //         }
-        //     }
-        //     result.push(case.1.clone());
-        // }
+        assert!(result.len() > 0);
         result
     }
 

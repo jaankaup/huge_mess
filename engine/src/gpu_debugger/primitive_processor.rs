@@ -339,13 +339,20 @@ impl PrimitiveProcessor {
             0);
     }
     pub fn insert_arrow(&self, device: &wgpu::Device, queue: &wgpu::Queue, arrow: &Arrow, offset: u32) {
-        // log::info!("PrimitiveProcessor::insert_arrow");
         add_data::<Arrow>(
             device,
             queue,
             &[*arrow],
             &self.arrow_buffer,
             (offset * std::mem::size_of::<Arrow>() as u32).into());
-        // log::info!("PrimitiveProcessor::insert_arrow Done");
+    }
+    pub fn insert_arrows(&self, device: &wgpu::Device, queue: &wgpu::Queue, arrows: &Vec<Arrow>, offset: u32) {
+        add_data::<Arrow>(
+            device,
+            queue,
+            &arrows,
+            &self.arrow_buffer,
+            (offset * std::mem::size_of::<Arrow>() as u32).into());
+            //0)
     }
 }
