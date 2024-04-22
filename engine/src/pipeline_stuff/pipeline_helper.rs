@@ -70,7 +70,7 @@ pub fn create_render_pipeline_wrapper(
         &wgpu::VertexState {
             module: &wgsl_module,
             entry_point: "vs_main",
-            constants: &Default::default(),
+            compilation_options: Default::default(),
             buffers: &[
                 wgpu::VertexBufferLayout {
                     array_stride: stride,

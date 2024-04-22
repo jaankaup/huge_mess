@@ -29,8 +29,8 @@ raw-window-handle = "0.6"
 ron = "0.8"
 serde = "1"
 serde_json = "1.0.114"
-wgpu = { git = "https://github.com/gfx-rs/wgpu", rev="911baf3e8cb9308a64392fcd810845532191f817" }
-# wgpu = { git = "https://github.com/gfx-rs/wgpu", rev="136ca1500e33959beb2a56a9143ec1d7d95c704c" }
+wgpu = { git = "https://github.com/gfx-rs/wgpu", rev="dd6ac1c80463c2fc87897db71f433028dbe2af07" }
+# wgpu = { git = "https://github.com/gfx-rs/wgpu", rev="911baf3e8cb9308a64392fcd810845532191f817" }
 version = "0.29"
 thiserror = "1"
 cfg-if = "1"
