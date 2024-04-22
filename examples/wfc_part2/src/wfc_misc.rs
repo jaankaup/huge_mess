@@ -45,64 +45,179 @@ pub fn create_rotations(rules: u32, data: &Vec<[f32 ; 4]>) -> Vec<Vec<[f32 ; 4]>
     let r270z = rules & 256 != 0;
 
     // Add surrounding ifs.
-    let mut temp = Vec::new();
-    for d in data.iter() { if r90x { temp.push(ro90x(d));   } }
-    result.push(temp);
+    if r90x {
+        let mut temp = Vec::new();
+        for d in data.iter() { if r90x { temp.push(ro90x(d));   } }
+        result.push(temp);
+    }
 
-    let mut temp = Vec::new();
-    for d in data.iter() { if r180x { temp.push(ro180x(d)); } }
-    result.push(temp);
+    if r180x {
+        let mut temp = Vec::new();
+        for d in data.iter() { if r180x { temp.push(ro180x(d)); } }
+        result.push(temp);
+    }
 
-    let mut temp = Vec::new();
-    for d in data.iter() { if r270x { temp.push(ro270x(d)); } }
-    result.push(temp);
+    if r270x {
+        let mut temp = Vec::new();
+        for d in data.iter() { if r270x { temp.push(ro270x(d)); } }
+        result.push(temp);
+    }
 
-    let mut temp = Vec::new();
-    for d in data.iter() { if r90y { temp.push(ro90y(d));   } }
-    result.push(temp);
+    if r90y {
+        let mut temp = Vec::new();
+        for d in data.iter() { if r90y { temp.push(ro90y(d));   } }
+        result.push(temp);
+    }
 
-    let mut temp = Vec::new();
-    for d in data.iter() { if r180y { temp.push(ro180y(d)); } }
-    result.push(temp);
+    if r180y {
+        let mut temp = Vec::new();
+        for d in data.iter() { if r180y { temp.push(ro180y(d)); } }
+        result.push(temp);
+    }
 
-    let mut temp = Vec::new();
-    for d in data.iter() { if r270y { temp.push(ro270y(d)); } }
-    result.push(temp);
+    if r270y {
+        let mut temp = Vec::new();
+        for d in data.iter() { if r270y { temp.push(ro270y(d)); } }
+        result.push(temp);
+    }
 
-    let mut temp = Vec::new();
-    for d in data.iter() { if r90z { temp.push(ro90z(d));   } }
-    result.push(temp);
+    if r90z {
+        let mut temp = Vec::new();
+        for d in data.iter() { if r90z { temp.push(ro90z(d));   } }
+        result.push(temp);
+    }
 
-    let mut temp = Vec::new();
-    for d in data.iter() { if r180z { temp.push(ro180z(d)); } }
-    result.push(temp);
+    if r180z {
+        let mut temp = Vec::new();
+        for d in data.iter() { if r180z { temp.push(ro180z(d)); } }
+        result.push(temp);
+    }
 
-    let mut temp = Vec::new();
-    for d in data.iter() { if r270z { temp.push(ro270z(d)); } }
-    result.push(temp);
+    if r270z {
+        let mut temp = Vec::new();
+        for d in data.iter() { if r270z { temp.push(ro270z(d)); } }
+        result.push(temp);
+    }
     
     // TODO: implement refections too.
     result
 }
 
 pub fn check_connections_5x5x5(input: &Vec<[f32; 4]>, neighbor: &Vec<[f32;4]>) -> [u32 ; 6] {
+
     // Check all 6 direction for all rotations.
-    
-    let x_plus =  input.iter().filter(|x| x[0] ==  2.0).collect::<Vec<_>>();
-    let x_minus = input.iter().filter(|x| x[0] == -2.0).collect::<Vec<_>>();
-    let y_plus =  input.iter().filter(|x| x[1] ==  2.0).collect::<Vec<_>>();
-    let y_minus = input.iter().filter(|x| x[1] == -2.0).collect::<Vec<_>>();
-    let z_plus =  input.iter().filter(|x| x[2] ==  2.0).collect::<Vec<_>>();
-    let z_minus = input.iter().filter(|x| x[2] == -2.0).collect::<Vec<_>>();
+    let mut x_plus =  input.iter().filter(|x| x[0] ==  2.0).map(|x| [x[0] as i32, x[1] as i32, x[2] as i32]).collect::<Vec<_>>();
+    let mut x_minus = input.iter().filter(|x| x[0] == -2.0).map(|x| [x[0] as i32, x[1] as i32, x[2] as i32]).collect::<Vec<_>>();
+    let mut y_plus =  input.iter().filter(|x| x[1] ==  2.0).map(|x| [x[0] as i32, x[1] as i32, x[2] as i32]).collect::<Vec<_>>();
+    let mut y_minus = input.iter().filter(|x| x[1] == -2.0).map(|x| [x[0] as i32, x[1] as i32, x[2] as i32]).collect::<Vec<_>>();
+    let mut z_plus =  input.iter().filter(|x| x[2] ==  2.0).map(|x| [x[0] as i32, x[1] as i32, x[2] as i32]).collect::<Vec<_>>();
+    let mut z_minus = input.iter().filter(|x| x[2] == -2.0).map(|x| [x[0] as i32, x[1] as i32, x[2] as i32]).collect::<Vec<_>>();
 
-    let all_neighbor_rotations = create_rotations(0b111111111, neighbor); 
+    x_plus.sort();
+    x_minus.sort();
+    y_plus.sort();
+    y_minus.sort();
+    z_plus.sort();
+    z_minus.sort();
 
+    println!("x_plus == {:?}", x_plus);
+    println!("x_minus == {:?}", x_minus);
+    println!("u_plus == {:?}", y_plus);
+    println!("y_minus == {:?}", y_minus);
+    println!("z_plus == {:?}", z_plus);
+    println!("z_minus == {:?}", z_minus);
+
+    let all_neighbor_rotations = create_rotations(0b111111111, neighbor);
+
+    // 0 :: x+ direction
+    // 1 :: x- direction
+    // 2 :: y+ direction
+    // 3 :: y- direction
+    // 4 :: z+ direction
+    // 5 :: z- direction
     let mut result = [0, 0, 0, 0, 0, 0];
-    // The x- direction. All x- vertices should be the same. 
+    
+    // input x+ amd left neighbor x- matches.
     for (index, n) in all_neighbor_rotations.iter().enumerate() {
-        
+
+        // Check the x+ side of the cube.  
+        let mut all_x_minus_neighbor = n.iter().filter(|x| x[0] == -2.0).map(|x| [-1 * x[0] as i32, x[1] as i32, x[2] as i32]).collect::<Vec<_>>(); 
+        all_x_minus_neighbor.sort();
+        // println!("all_x_minus_neighbor {:?}", all_x_minus_neighbor);
+
+        // x- matches! Add rotation index  
+        if all_x_minus_neighbor == x_plus {
+            result[0] |= 1 << index;
+        }
     }
-    [0, 0, 0, 0, 0, 0]
+    // input x- and right neighbor x+ matches.
+    for (index, n) in all_neighbor_rotations.iter().enumerate() {
+
+        // Check the x- side of the cube.  
+        let mut all_x_minus_neighbor = n.iter().filter(|x| x[0] == 2.0).map(|x| [-1 * x[0] as i32, x[1] as i32, x[2] as i32]).collect::<Vec<_>>(); 
+        all_x_minus_neighbor.sort();
+        // println!("all_x_minus_neighbor {:?}", all_x_minus_neighbor);
+
+        // x+ matches! Add rotation index  
+        if all_x_minus_neighbor == x_minus {
+            result[1] |= 1 << index;
+        }
+    }
+    // input y+ and y- neighbor.
+    for (index, n) in all_neighbor_rotations.iter().enumerate() {
+
+        // Check the x- side of the cube.  
+        let mut all_y_minus_neighbor = n.iter().filter(|x| x[1] == -2.0).map(|x| [x[0] as i32, -1 * x[1] as i32, x[2] as i32]).collect::<Vec<_>>(); 
+        all_y_minus_neighbor.sort();
+        // println!("all_x_minus_neighbor {:?}", all_x_minus_neighbor);
+
+        // x+ matches! Add rotation index  
+        if all_y_minus_neighbor == y_plus {
+            result[2] |= 1 << index;
+        }
+    }
+
+    // input y- and y+ neighbor.
+    for (index, n) in all_neighbor_rotations.iter().enumerate() {
+
+        // Check the x- side of the cube.  
+        let mut all_y_plus_neighbor = n.iter().filter(|x| x[1] == 2.0).map(|x| [x[0] as i32, -1 * x[1] as i32, x[2] as i32]).collect::<Vec<_>>(); 
+        all_y_plus_neighbor.sort();
+        // println!("all_x_minus_neighbor {:?}", all_x_minus_neighbor);
+
+        // x+ matches! Add rotation index  
+        if all_y_plus_neighbor == y_minus {
+            result[3] |= 1 << index;
+        }
+    }
+
+    // input z+ and z- neighbor.
+    for (index, n) in all_neighbor_rotations.iter().enumerate() {
+
+        // Check the z+ side of the cube.  
+        let mut all_z_minus_neighbor = n.iter().filter(|x| x[2] == -2.0).map(|x| [x[0] as i32, x[1] as i32, -1 * x[2] as i32]).collect::<Vec<_>>(); 
+        all_z_minus_neighbor.sort();
+
+        // z+ matches! Add rotation index  
+        if all_z_minus_neighbor == z_plus {
+            result[4] |= 1 << index;
+        }
+    }
+
+    // input z- and z+ neighbor.
+    for (index, n) in all_neighbor_rotations.iter().enumerate() {
+
+        // Check the z- side of the cube.  
+        let mut all_z_plus_neighbor = n.iter().filter(|x| x[2] == 2.0).map(|x| [x[0] as i32, x[1] as i32, -1 * x[2] as i32]).collect::<Vec<_>>(); 
+        all_z_plus_neighbor.sort();
+
+        // z+ matches! Add rotation index  
+        if all_z_plus_neighbor == z_minus {
+            result[5] |= 1 << index;
+        }
+    }
+
+    result
 }
 
 // TODO: asserts that check that the input is actually big enought.

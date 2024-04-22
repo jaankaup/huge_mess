@@ -1,3 +1,4 @@
+use crate::wfc_misc::check_connections_5x5x5;
 use std::cmp::Reverse;
 use engine::wfc_test::Direction;
 use engine::wfc_test::SceneNode;
@@ -216,24 +217,96 @@ impl Application for WfcPart2App {
 
 
             let color: f32 = unsafe {transmute::<u32, f32>(0xFFFF00FF)};
+            let color_red: f32 = unsafe {transmute::<u32, f32>(0xFF0000FF)};
             let color_90: f32 = unsafe {transmute::<u32, f32>(0x00FFFFFF)};
             let color_180: f32 = unsafe {transmute::<u32, f32>(0xFFFFFFFF)};
             let color_270: f32 = unsafe {transmute::<u32, f32>(0x0F0FFFFF)};
 
             let test   = test_data(0xFFFF00FF);
-            let all_rotations = create_rotations(0b111111111, &test);
-            let mut base_position    =   [0.0, 0.0, 0.0];
+            // let all_rotations = create_rotations(0b111111111, &test);
+            let mut base_position = [0.0, 0.0, 0.0];
 
-            for rotation in all_rotations.iter() {
+            let connections = check_connections_5x5x5(&test, &test);
+            println!("connections = {:?}", connections);
+            let rotations_x_plus_dir = create_rotations(connections[0], &test);
+
+            for x in test.iter() {
+                self.temp_aabbs.push(
+                    AABB {
+                        min: [x[0] + base_position[0],       x[1]       + base_position[1] , x[2] + base_position[2], color],
+                        max: [x[0] + base_position[0] + 1.0, x[1] + 1.0 + base_position[1] , x[2] + base_position[2] - 1.0, color],
+                    });
+            }
+            base_position[0] += 5.0;
+
+            // Check the x- direction.
+
+            // for rotation in all_rotations.iter() {
+            for rotation in rotations_x_plus_dir.iter() {
                 for x in rotation.iter() {  
                     self.temp_aabbs.push(
                         AABB {
-                            min: [x[0] + base_position[0],       x[1]       + base_position[1] , x[2] + base_position[2], color],
-                            max: [x[0] + base_position[0] + 1.0, x[1] + 1.0 + base_position[1] , x[2] + base_position[2] - 1.0, color],
+                            min: [x[0] + base_position[0],       x[1]       + base_position[1] , x[2] + base_position[2], color_red],
+                            max: [x[0] + base_position[0] + 1.0, x[1] + 1.0 + base_position[1] , x[2] + base_position[2] - 1.0, color_red],
                         });
                 }
                 base_position[0] += 5.0;
             }
+            let mut base_position = [-5.0, 0.0, 0.0];
+
+            let rotations_x_minus_dir = create_rotations(connections[1], &test);
+            for rotation in rotations_x_minus_dir.iter() {
+                for x in rotation.iter() {  
+                    self.temp_aabbs.push(
+                        AABB {
+                            min: [x[0] + base_position[0],       x[1]       + base_position[1] , x[2] + base_position[2], color_red],
+                            max: [x[0] + base_position[0] + 1.0, x[1] + 1.0 + base_position[1] , x[2] + base_position[2] - 1.0, color_red],
+                        });
+                }
+                base_position[0] -= 5.0;
+            }
+            let mut base_position = [0.0, 5.0, 0.0];
+
+            let rotations_y_plus_dir = create_rotations(connections[2], &test);
+            for rotation in rotations_y_plus_dir.iter() {
+                for x in rotation.iter() {
+                    self.temp_aabbs.push(
+                        AABB {
+                            min: [x[0] + base_position[0],       x[1]       + base_position[1] , x[2] + base_position[2], color_red],
+                            max: [x[0] + base_position[0] + 1.0, x[1] + 1.0 + base_position[1] , x[2] + base_position[2] - 1.0, color_red],
+                        });
+                }
+                base_position[1] += 5.0;
+            }
+
+            let mut base_position = [0.0, -5.0, 0.0];
+
+            let rotations_y_minus_dir = create_rotations(connections[3], &test);
+            for rotation in rotations_y_minus_dir.iter() {
+                for x in rotation.iter() {
+                    self.temp_aabbs.push(
+                        AABB {
+                            min: [x[0] + base_position[0],       x[1]       + base_position[1] , x[2] + base_position[2], color_red],
+                            max: [x[0] + base_position[0] + 1.0, x[1] + 1.0 + base_position[1] , x[2] + base_position[2] - 1.0, color_red],
+                        });
+                }
+                base_position[1] -= 5.0;
+            }
+
+            let mut base_position = [0.0, 5.0, 0.0];
+
+            let rotations_z_plus_dir = create_rotations(connections[4], &test);
+            for rotation in rotations_z_plus_dir.iter() {
+                for x in rotation.iter() {
+                    self.temp_aabbs.push(
+                        AABB {
+                            min: [x[0] + base_position[0],       x[1]       + base_position[1] , x[2] + base_position[2], color_red],
+                            max: [x[0] + base_position[0] + 1.0, x[1] + 1.0 + base_position[1] , x[2] + base_position[2] - 1.0, color_red],
+                        });
+                }
+                base_position[2] += 5.0;
+            }
+
             self.gpu_debugger.add_aabbs(&context.device, &context.queue, &self.temp_aabbs);
             self.gpu_debugger.add_arrows(&context.device, &context.queue, &self.temp_arrows);
         }
