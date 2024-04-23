@@ -194,22 +194,22 @@ impl Application for WfcPart2App {
         if self.once {
 
             self.temp_arrows.push(Arrow {
-                start_pos: [0.0, 10.0, 0.0, 1.0],
-                end_pos: [0.0, 15.0, 0.0, 1.0],
+                start_pos: [-40.0, 10.0, 0.0, 1.0],
+                end_pos: [-40.0, 15.0, 0.0, 1.0],
                 color: 0x00FF00FF,
                 size: 0.5,
                 _padding: [0,0],
             });
             self.temp_arrows.push(Arrow {
-                start_pos: [0.0, 10.0, 0.0, 1.0],
-                end_pos: [5.0, 10.0, 0.0, 1.0],
+                start_pos: [-40.0, 10.0, 0.0, 1.0],
+                end_pos: [-35.0, 10.0, 0.0, 1.0],
                 color: 0xFF0000FF,
                 size: 0.5,
                 _padding: [0,0],
             });
             self.temp_arrows.push(Arrow {
-                start_pos: [0.0, 10.0, 0.0, 1.0],
-                end_pos: [0.0, 10.0, 5.0, 1.0],
+                start_pos: [-40.0, 10.0, 0.0, 1.0],
+                end_pos: [-40.0, 10.0, 5.0, 1.0],
                 color: 0x0000FFFF,
                 size: 0.5,
                 _padding: [0,0],
@@ -293,7 +293,7 @@ impl Application for WfcPart2App {
                 base_position[1] -= 5.0;
             }
 
-            let mut base_position = [0.0, 5.0, 0.0];
+            let mut base_position = [0.0, 0.0, 5.0];
 
             let rotations_z_plus_dir = create_rotations(connections[4], &test);
             for rotation in rotations_z_plus_dir.iter() {
@@ -305,6 +305,20 @@ impl Application for WfcPart2App {
                         });
                 }
                 base_position[2] += 5.0;
+            }
+
+            let mut base_position = [0.0, 0.0, -5.0];
+
+            let rotations_z_minus_dir = create_rotations(connections[5], &test);
+            for rotation in rotations_z_minus_dir.iter() {
+                for x in rotation.iter() {
+                    self.temp_aabbs.push(
+                        AABB {
+                            min: [x[0] + base_position[0],       x[1]       + base_position[1] , x[2] + base_position[2], color_red],
+                            max: [x[0] + base_position[0] + 1.0, x[1] + 1.0 + base_position[1] , x[2] + base_position[2] - 1.0, color_red],
+                        });
+                }
+                base_position[2] += -5.0;
             }
 
             self.gpu_debugger.add_aabbs(&context.device, &context.queue, &self.temp_aabbs);

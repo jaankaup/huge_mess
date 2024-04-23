@@ -19,6 +19,22 @@ pub fn test_data(color: u32) -> Vec<[f32 ; 4]> {
     result 
 }
 
+pub enum Rotation {
+    Indentity,
+    R90X,
+    R180X,
+    R270X,
+    R90Y,
+    R180Y,
+    R270Y,
+    R90Z,
+    R180Z,
+    R270Z,
+    ReflectionX,
+    ReflectionY,
+    ReflectionZ,
+}
+
 //    0    1    2    3    4    5    6    7    8    9     10   11   12 
 //  +----+-----+-----+----+-----+-----+----+-----+-----+----+----+----+
 //  |r90x|r180x|r270x|r90y|r180y|r270y|r90z|r180z|r270z| rx | ry | rx |
@@ -34,68 +50,88 @@ pub fn create_rotations(rules: u32, data: &Vec<[f32 ; 4]>) -> Vec<Vec<[f32 ; 4]>
 
     let mut result = Vec::new();
 
-    let r90x = rules  & 1   != 0;
-    let r180x = rules & 2   != 0;
-    let r270x = rules & 4   != 0;
-    let r90y = rules  & 8   != 0;
-    let r180y = rules & 16  != 0;
-    let r270y = rules & 32  != 0;
-    let r90z = rules  & 64  != 0;
-    let r180z = rules & 128 != 0;
-    let r270z = rules & 256 != 0;
+    let identity = rules & 1   != 0;  // 0
+    let r90x = rules     & 2   != 0;  // 1
+    let r180x = rules    & 4   != 0;  // 2
+    let r270x = rules    & 8   != 0;  // 3
+    let r90y = rules     & 16  != 0;  // 4
+    let r180y = rules    & 32  != 0;  // 5
+    let r270y = rules    & 64  != 0;  // 6
+    let r90z = rules     & 128 != 0;  // 7
+    let r180z = rules    & 256 != 0;  // 8
+    let r270z = rules    & 512 != 0;  // 9
+
+    // let r90x = rules  & 1   != 0;
+    // let r180x = rules & 2   != 0;
+    // let r270x = rules & 4   != 0;
+    // let r90y = rules  & 8   != 0;
+    // let r180y = rules & 16  != 0;
+    // let r270y = rules & 32  != 0;
+    // let r90z = rules  & 64  != 0;
+    // let r180z = rules & 128 != 0;
+    // let r270z = rules & 256 != 0;
 
     // Add surrounding ifs.
+
+    if identity {
+        let mut temp = Vec::new();
+        for d in data.iter() { temp.push(*d); }
+        result.push(temp);
+    }
+
     if r90x {
         let mut temp = Vec::new();
-        for d in data.iter() { if r90x { temp.push(ro90x(d));   } }
+        // for d in data.iter() { if r90x { temp.push(ro90x(d));   } }
+        for d in data.iter() { temp.push(ro90x(d)); }
         result.push(temp);
     }
 
     if r180x {
         let mut temp = Vec::new();
-        for d in data.iter() { if r180x { temp.push(ro180x(d)); } }
+        for d in data.iter() { temp.push(ro180x(d)); }
+        // for d in data.iter() { if r180x { temp.push(ro180x(d)); } }
         result.push(temp);
     }
 
     if r270x {
         let mut temp = Vec::new();
-        for d in data.iter() { if r270x { temp.push(ro270x(d)); } }
+        for d in data.iter() { temp.push(ro270x(d)); }
         result.push(temp);
     }
 
     if r90y {
         let mut temp = Vec::new();
-        for d in data.iter() { if r90y { temp.push(ro90y(d));   } }
+        for d in data.iter() { temp.push(ro90y(d)); }
         result.push(temp);
     }
 
     if r180y {
         let mut temp = Vec::new();
-        for d in data.iter() { if r180y { temp.push(ro180y(d)); } }
+        for d in data.iter() { temp.push(ro180y(d)); }
         result.push(temp);
     }
 
     if r270y {
         let mut temp = Vec::new();
-        for d in data.iter() { if r270y { temp.push(ro270y(d)); } }
+        for d in data.iter() { temp.push(ro270y(d)); }
         result.push(temp);
     }
 
     if r90z {
         let mut temp = Vec::new();
-        for d in data.iter() { if r90z { temp.push(ro90z(d));   } }
+        for d in data.iter() { temp.push(ro90z(d)); }
         result.push(temp);
     }
 
     if r180z {
         let mut temp = Vec::new();
-        for d in data.iter() { if r180z { temp.push(ro180z(d)); } }
+        for d in data.iter() { temp.push(ro180z(d)); }
         result.push(temp);
     }
 
     if r270z {
         let mut temp = Vec::new();
-        for d in data.iter() { if r270z { temp.push(ro270z(d)); } }
+        for d in data.iter() { temp.push(ro270z(d)); }
         result.push(temp);
     }
     
@@ -127,7 +163,7 @@ pub fn check_connections_5x5x5(input: &Vec<[f32; 4]>, neighbor: &Vec<[f32;4]>) -
     println!("z_plus == {:?}", z_plus);
     println!("z_minus == {:?}", z_minus);
 
-    let all_neighbor_rotations = create_rotations(0b111111111, neighbor);
+    let all_neighbor_rotations = create_rotations(0b1111111111, neighbor);
 
     // 0 :: x+ direction
     // 1 :: x- direction
@@ -211,7 +247,7 @@ pub fn check_connections_5x5x5(input: &Vec<[f32; 4]>, neighbor: &Vec<[f32;4]>) -
         let mut all_z_plus_neighbor = n.iter().filter(|x| x[2] == 2.0).map(|x| [x[0] as i32, x[1] as i32, -1 * x[2] as i32]).collect::<Vec<_>>(); 
         all_z_plus_neighbor.sort();
 
-        // z+ matches! Add rotation index  
+        // z- matches! Add rotation index  
         if all_z_plus_neighbor == z_minus {
             result[5] |= 1 << index;
         }
