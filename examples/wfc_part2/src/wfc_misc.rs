@@ -5,18 +5,41 @@ pub fn test_data(color: u32) -> Vec<[f32 ; 4]> {
 
     let mut result = Vec::new();
 
-    let color: f32 = unsafe {transmute::<u32, f32>(color)};
+    let the_color: f32 = unsafe {transmute::<u32, f32>(color)};
 
     for i in -2..2 {
         for k in -2..3 {
-            result.push([i as f32, -2.0, k as f32, color]);
+            result.push([i as f32, -2.0, k as f32, the_color]);
         }
     }
     for j in -2..3 {
         for k in -2..3 {
-            result.push([2.0, j as f32, k as f32, color]);
+            result.push([2.0, j as f32, k as f32, the_color]);
         }
     }
+    result.push([0.0, 0.0, 0.0, the_color]);
+    result.push([1.0, 0.0, 0.0, the_color]);
+    result.push([2.0, 0.0, 0.0, the_color]);
+    result 
+}
+
+pub fn test_data_v3() -> Vec<[f32 ; 3]> {
+
+    let mut result = Vec::new();
+
+    for i in -2..2 {
+        for k in -2..3 {
+            result.push([i as f32, -2.0, k as f32]);
+        }
+    }
+    for j in -2..3 {
+        for k in -2..3 {
+            result.push([2.0, j as f32, k as f32]);
+        }
+    }
+    result.push([0.0, 0.0, 0.0]);
+    result.push([1.0, 0.0, 0.0]);
+    result.push([2.0, 0.0, 0.0]);
     result 
 }
 
@@ -34,7 +57,12 @@ pub struct Voxel {
 }
 
 impl Voxel {
-    pub fn init(id: u32, cases: u32, dimension: u32, weight: f32, connection_data: &Vec<[f32; 4]>, visual_data: &Vec<[f32 ; 4]>) -> Self {
+    pub fn init(id: u32,
+                cases: u32,
+                dimension: u32,
+                weight: f32,
+                connection_data: &Vec<[f32; 4]>,
+                visual_data: &Vec<[f32 ; 4]>) -> Self {
 
         assert!(cases <= 0b1111111111);
         assert!(weight <= 1.0 && weight >= 0.0);
@@ -68,38 +96,6 @@ impl Voxel {
     pub fn get_possible_neighbors(&self, current_rotation: u32) -> HashMap<u32, [u32 ; 6]> {
         let mut result = HashMap::new();
         for (k, v) in self.possible_neighbors.iter() {
-    // [round_half_up(vec[0]),
-    //  round_half_up(-vec[2]),
-    //  round_half_up(vec[1]),
-    //
-    // [round_half_up(vec[0]),
-    //  round_half_up(-vec[1]),
-    //  round_half_up(-vec[2]),
-    //
-    // [round_half_up(vec[0]),
-    //  round_half_up(vec[2]),
-    //  round_half_up(-vec[1]),
-    //
-    // [round_half_up(vec[2]),
-    //  round_half_up(vec[1]),
-    //  round_half_up(-vec[0]),
-    //
-    // [round_half_up(-vec[0]),
-    //  round_half_up(vec[1]),
-    //  round_half_up(-vec[2]),
-    //  round_half_up(vec[3])]
-    // [round_half_up(-vec[2]),
-    //  round_half_up(vec[1]),
-    //  round_half_up(vec[0]),
-    // [round_half_up(-vec[1]),
-    //  round_half_up(vec[0]),
-    //  round_half_up(vec[2]),
-    //[round_half_up(-vec[0]),
-    // round_half_up(-vec[1]),
-    // round_half_up(vec[2]),
-    // [round_half_up(vec[1]),
-    //  round_half_up(-vec[0]),
-    //  round_half_up(vec[2]),
             if current_rotation & 1        != 0 { result.insert(*k, *v);}
             else if current_rotation & 2   != 0 { result.insert(*k, [v[0], v[1], v[5], v[4], v[2], v[3]]); } //ro90x
             else if current_rotation & 4   != 0 { result.insert(*k, [v[0], v[1], v[3], v[2], v[5], v[4]]); } // ro180x
@@ -110,29 +106,21 @@ impl Voxel {
             else if current_rotation & 128 != 0 { result.insert(*k, [v[3], v[2], v[0], v[1], v[4], v[5]]); } // ro90z
             else if current_rotation & 256 != 0 { result.insert(*k, [v[1], v[0], v[3], v[2], v[4], v[5]]); } // ro180z
             else if current_rotation & 512 != 0 { result.insert(*k, [v[2], v[3], v[1], v[0], v[4], v[5]]); } // ro270z
-            // else { panic!("current_rotation not supported.");
+            else { panic!("current_rotation not supported.") }
         }
         // Check that neighbor rotations are legal.
         result
     }
 
-    // All possible cases. Directions that has already a known neighbor is given as argumen.
-    // Return hash map where key is voxel id and all possible rotations for that voxel.
-    // pub fn get_all_possible_cases(&self,
-    //                               x_plus:  Option<&Voxel>,
-    //                               x_minus: Option<&Voxel>,
-    //                               y_plus:  Option<&Voxel>,
-    //                               y_minus: Option<&Voxel>,
-    //                               z_plus:  Option<&Voxel>,
-    //                               z_minus: Option<&Voxel>,
-    //                               ) -> HashMap<u32, [u32 ; 6]> {
-
-    //     // Check cases for each direction.
-    //     if let Some(x_plus) {
-    //           
-    //     }
-
-    // }
+    // Get all possible rotations
+    pub fn get_all_rotations(&self) -> Vec<Vec<[f32; 4]>> {
+        let mut result: Vec<Vec<[f32; 4]>> = Vec::new(); 
+        for i in 0..13 {
+            result.push(create_rotations(1 << i, &self.connection_data)[0].clone());
+        }
+        println!("All rotations {:?}", result);
+        result
+    }
 }
 
 /// A enum for each possible rotation and reflection.
@@ -189,26 +177,19 @@ pub fn create_rotations(rules: u32, data: &Vec<[f32 ; 4]>) -> Vec<Vec<[f32 ; 4]>
 
     let mut result = Vec::new();
 
-    let identity = rules & 1   != 0;  // 0
-    let r90x = rules     & 2   != 0;  // 1
-    let r180x = rules    & 4   != 0;  // 2
-    let r270x = rules    & 8   != 0;  // 3
-    let r90y = rules     & 16  != 0;  // 4
-    let r180y = rules    & 32  != 0;  // 5
-    let r270y = rules    & 64  != 0;  // 6
-    let r90z = rules     & 128 != 0;  // 7
-    let r180z = rules    & 256 != 0;  // 8
-    let r270z = rules    & 512 != 0;  // 9
-
-    // let r90x = rules  & 1   != 0;
-    // let r180x = rules & 2   != 0;
-    // let r270x = rules & 4   != 0;
-    // let r90y = rules  & 8   != 0;
-    // let r180y = rules & 16  != 0;
-    // let r270y = rules & 32  != 0;
-    // let r90z = rules  & 64  != 0;
-    // let r180z = rules & 128 != 0;
-    // let r270z = rules & 256 != 0;
+    let identity = rules & 1    != 0;  // 0
+    let r90x = rules     & 2    != 0;  // 1
+    let r180x = rules    & 4    != 0;  // 2
+    let r270x = rules    & 8    != 0;  // 3
+    let r90y = rules     & 16   != 0;  // 4
+    let r180y = rules    & 32   != 0;  // 5
+    let r270y = rules    & 64   != 0;  // 6
+    let r90z = rules     & 128  != 0;  // 7
+    let r180z = rules    & 256  != 0;  // 8
+    let r270z = rules    & 512  != 0;  // 9
+    let mir_x = rules & 1024 != 0; // 10
+    let mir_y = rules & 2048 != 0; // 11
+    let mir_z = rules & 4096 != 0; // 12
 
     // Add surrounding ifs.
 
@@ -273,6 +254,21 @@ pub fn create_rotations(rules: u32, data: &Vec<[f32 ; 4]>) -> Vec<Vec<[f32 ; 4]>
         for d in data.iter() { temp.push(ro270z(d)); }
         result.push(temp);
     }
+    if mir_x {
+        let mut temp = Vec::new();
+        for d in data.iter() { temp.push(mirror_x(d)); }
+        result.push(temp);
+    }
+    if mir_y {
+        let mut temp = Vec::new();
+        for d in data.iter() { temp.push(mirror_y(d)); }
+        result.push(temp);
+    }
+    if mir_z {
+        let mut temp = Vec::new();
+        for d in data.iter() { temp.push(mirror_z(d)); }
+        result.push(temp);
+    }
     
     // TODO: implement refections too.
     result
@@ -281,7 +277,7 @@ pub fn create_rotations(rules: u32, data: &Vec<[f32 ; 4]>) -> Vec<Vec<[f32 ; 4]>
 pub fn check_connections(input: &Vec<[f32; 4]>, neighbor: &Vec<[f32;4]>, neighbor_rotations: u32) -> [u32 ; 6] {
 
     // TODO: Assert neighbor rotations.
-    // Check all 6 direction for all rotations.
+    // Check all 6 directions for all rotations.
     let mut x_plus =  input.iter().filter(|x| x[0] ==  2.0).map(|x| [x[0] as i32, x[1] as i32, x[2] as i32]).collect::<Vec<_>>();
     let mut x_minus = input.iter().filter(|x| x[0] == -2.0).map(|x| [x[0] as i32, x[1] as i32, x[2] as i32]).collect::<Vec<_>>();
     let mut y_plus =  input.iter().filter(|x| x[1] ==  2.0).map(|x| [x[0] as i32, x[1] as i32, x[2] as i32]).collect::<Vec<_>>();
@@ -469,6 +465,109 @@ pub fn ro270z(vec: &[f32]) -> [f32 ; 4] {
      round_half_up(vec[3])]
 }
 
+#[inline]
+pub fn mirror_x(vec: &[f32]) -> [f32 ; 4] {
+    [round_half_up(-vec[0]),
+     round_half_up(vec[1]),
+     round_half_up(vec[2]),
+     round_half_up(vec[3])]
+}
+#[inline]
+pub fn mirror_y(vec: &[f32]) -> [f32 ; 4] {
+    [round_half_up(vec[0]),
+     round_half_up(-vec[1]),
+     round_half_up(vec[2]),
+     round_half_up(vec[3])]
+}
+#[inline]
+pub fn mirror_z(vec: &[f32]) -> [f32 ; 4] {
+    [round_half_up(vec[0]),
+     round_half_up(vec[1]),
+     round_half_up(-vec[2]),
+     round_half_up(vec[3])]
+}
+
+#[inline]
+pub fn ro90xv3(vec: &[f32; 3]) -> [f32 ; 3] {
+    [round_half_up(vec[0]),
+     round_half_up(-vec[2]),
+     round_half_up(vec[1])]
+}
+
+#[inline]
+pub fn ro180xv3(vec: &[f32; 3]) -> [f32 ; 3] {
+    [round_half_up(vec[0]),
+     round_half_up(-vec[1]),
+     round_half_up(-vec[2])]
+}
+
+#[inline]
+pub fn ro270xv3(vec: &[f32; 3]) -> [f32 ; 3] {
+    [round_half_up(vec[0]),
+     round_half_up(vec[2]),
+     round_half_up(-vec[1])]
+}
+
+#[inline]
+pub fn ro90yv3(vec: &[f32; 3]) -> [f32 ; 3] {
+    [round_half_up(vec[2]),
+     round_half_up(vec[1]),
+     round_half_up(-vec[0])]
+}
+ 
+#[inline]
+pub fn ro180yv3(vec: &[f32; 3]) -> [f32 ; 3] {
+    [round_half_up(-vec[0]),
+     round_half_up(vec[1]),
+     round_half_up(-vec[2])]
+}
+
+#[inline]
+pub fn ro270yv3(vec: &[f32; 3]) -> [f32 ; 3] {
+    [round_half_up(-vec[2]),
+     round_half_up(vec[1]),
+     round_half_up(vec[0])]
+}
+
+#[inline]
+pub fn ro90zv3(vec: &[f32; 3]) -> [f32 ; 3] {
+    [round_half_up(-vec[1]),
+     round_half_up(vec[0]),
+     round_half_up(vec[2])]
+}
+
+#[inline]
+pub fn ro180zv3(vec: &[f32; 3]) -> [f32 ; 3] {
+    [round_half_up(-vec[0]),
+     round_half_up(-vec[1]),
+     round_half_up(vec[2])]
+}
+
+#[inline]
+pub fn ro270zv3(vec: &[f32; 3]) -> [f32 ; 3] {
+    [round_half_up(vec[1]),
+     round_half_up(-vec[0]),
+     round_half_up(vec[2])]
+}
+
+#[inline]
+pub fn mirror_xv3(vec: &[f32; 3]) -> [f32 ; 3] {
+    [round_half_up(-vec[0]),
+     round_half_up(vec[1]),
+     round_half_up(vec[2])]
+}
+#[inline]
+pub fn mirror_yv3(vec: &[f32]) -> [f32 ; 3] {
+    [round_half_up(vec[0]),
+     round_half_up(-vec[1]),
+     round_half_up(vec[2])]
+}
+#[inline]
+pub fn mirror_zv3(vec: &[f32]) -> [f32 ; 3] {
+    [round_half_up(vec[0]),
+     round_half_up(vec[1]),
+     round_half_up(-vec[2])]
+}
 
 #[inline]
 pub fn rex(vec: &[f32]) -> [f32 ; 3] {
@@ -547,4 +646,210 @@ pub fn reflect_y(vec: &[f32 ; 3]) -> [f32 ; 3] {
 #[inline]
 pub fn reflect_z(vec: &[f32 ; 3]) -> [f32 ; 3] {
     [-vec[0], -vec[1], vec[2]]
+}
+
+
+/***********************************************************************************/
+
+pub struct WfcBlock {
+
+    id: u32,
+    dimension: u32, // Symmetric matrix
+    connection_data: Vec<[f32 ; 3]>,
+    render_data: Vec<[f32 ; 4]>,
+    neighbors: Vec<(u32, [u32 ; 6])>,
+    match_data: Vec<Vec<[i32 ; 3]>>,
+    match_inverted: Vec<Vec<[i32 ; 3]>>
+
+}
+
+impl WfcBlock {
+
+    pub fn init(id: u32, dimension: u32, connection_data: Vec<[f32 ; 3]>, render_data: Vec<[f32 ; 4]>) -> Self {
+
+        // Precalculate match data for each direction.
+        let mut identity =  connection_data.iter().map(|x| [x[0] as i32, x[1] as i32, x[2] as i32]).collect::<Vec<_>>();
+        let mut x_plus =  connection_data.iter().filter(|x| x[0] ==  2.0).map(|x| [x[0] as i32, x[1] as i32, x[2] as i32]).collect::<Vec<_>>();
+        let mut x_minus = connection_data.iter().filter(|x| x[0] == -2.0).map(|x| [x[0] as i32, x[1] as i32, x[2] as i32]).collect::<Vec<_>>();
+        let mut y_plus =  connection_data.iter().filter(|x| x[1] ==  2.0).map(|x| [x[0] as i32, x[1] as i32, x[2] as i32]).collect::<Vec<_>>();
+        let mut y_minus = connection_data.iter().filter(|x| x[1] == -2.0).map(|x| [x[0] as i32, x[1] as i32, x[2] as i32]).collect::<Vec<_>>();
+        let mut z_plus =  connection_data.iter().filter(|x| x[2] ==  2.0).map(|x| [x[0] as i32, x[1] as i32, x[2] as i32]).collect::<Vec<_>>();
+        let mut z_minus = connection_data.iter().filter(|x| x[2] == -2.0).map(|x| [x[0] as i32, x[1] as i32, x[2] as i32]).collect::<Vec<_>>();
+
+        x_plus.sort();
+        x_minus.sort();
+        y_plus.sort();
+        y_minus.sort();
+        z_plus.sort();
+        z_minus.sort();
+        identity.sort();
+
+        let mut x_minus_inverted = connection_data.iter().filter(|x| x[0] == -2.0).map(|x| [-1 * x[0] as i32, x[1] as i32, x[2] as i32]).collect::<Vec<_>>(); 
+        let mut x_plus_inverted  = connection_data.iter().filter(|x| x[0] == 2.0).map(|x| [-1 * x[0] as i32, x[1] as i32, x[2] as i32]).collect::<Vec<_>>(); 
+        let mut y_minus_inverted = connection_data.iter().filter(|x| x[1] == -2.0).map(|x| [x[0] as i32, -1 * x[1] as i32, x[2] as i32]).collect::<Vec<_>>(); 
+        let mut y_plus_inverted  = connection_data.iter().filter(|x| x[1] == 2.0).map(|x| [x[0] as i32, -1 * x[1] as i32, x[2] as i32]).collect::<Vec<_>>(); 
+        let mut z_minus_inverted = connection_data.iter().filter(|x| x[2] == -2.0).map(|x| [x[0] as i32, x[1] as i32, -1 * x[2] as i32]).collect::<Vec<_>>(); 
+        let mut z_plus_inverted  = connection_data.iter().filter(|x| x[2] == 2.0).map(|x| [x[0] as i32, x[1] as i32, -1 * x[2] as i32]).collect::<Vec<_>>(); 
+
+        x_minus_inverted.sort();
+        x_plus_inverted.sort();
+        y_minus_inverted.sort();
+        y_plus_inverted.sort();
+        z_minus_inverted.sort();
+        z_plus_inverted.sort();
+
+        Self {
+            id: id,
+            dimension: dimension,
+            connection_data: connection_data,
+            render_data: render_data,
+            neighbors: Vec::new(),
+            match_data: vec![identity.clone(), x_plus, x_minus, y_plus, y_minus, z_plus, z_minus],
+            match_inverted: vec![identity, // Inverted identity is not used. It's just a placeholder.
+                                 x_minus_inverted,
+                                 x_plus_inverted,
+                                 y_minus_inverted,
+                                 y_plus_inverted,
+                                 z_minus_inverted,
+                                 z_plus_inverted],
+        }
+    }
+
+    pub fn get_match_data(&self, direction: usize) -> &Vec<[i32; 3]> {
+        assert!(direction < 7);
+        &self.match_data[direction]
+    }
+
+    // Use 1 => x+
+    // Use 2 => x-
+    // Use 3 => y+
+    // Use 4 => y-
+    // Use 5 => z+
+    // Use 6 => z-
+    pub fn get_inverted_match(&self, direction: usize) -> &Vec<[i32; 3]> {
+        assert!(direction < 7);
+        &self.match_inverted[direction]
+    }
+
+    pub fn get_connection_data(&self) -> &Vec<[f32; 3]> {
+        &self.connection_data
+    }
+
+    // Check if this block matches with an other block.
+    // Direction: 0 :: identity
+    // Direction: 1 :: x+
+    // Direction: 2 :: x-
+    // Direction: 3 :: y+
+    // Direction: 4 :: y-
+    // Direction: 5 :: z+
+    // Direction: 6 :: z-
+    pub fn matches(&self, other: &WfcBlock, direction: usize) -> bool {
+        assert!(direction < 7);
+        
+        // Compare the inverted axis to this axis data.
+        *other.get_match_data(direction) == self.match_data[direction]
+    }
+
+    pub fn create_rotation(&self, rule: u32, id: u32) -> WfcBlock {
+    
+        let mut connection_data = Vec::new();
+    
+        let identity = rule & 1    != 0;  // 0
+        let r90x = rule     & 2    != 0;  // 1
+        let r180x = rule    & 4    != 0;  // 2
+        let r270x = rule    & 8    != 0;  // 3
+        let r90y = rule     & 16   != 0;  // 4
+        let r180y = rule    & 32   != 0;  // 5
+        let r270y = rule    & 64   != 0;  // 6
+        let r90z = rule     & 128  != 0;  // 7
+        let r180z = rule    & 256  != 0;  // 8
+        let r270z = rule    & 512  != 0;  // 9
+        let mir_x = rule & 1024 != 0; // 10
+        let mir_y = rule & 2048 != 0; // 11
+        let mir_z = rule & 4096 != 0; // 12
+    
+        if identity {
+            let mut temp = Vec::new();
+            for d in self.connection_data.iter() { temp.push(*d); }
+            connection_data.push(temp);
+        }
+    
+        if r90x {
+            let mut temp = Vec::new();
+            // for d in data.iter() { if r90x { temp.push(ro90x(d));   } }
+            for d in self.connection_data.iter() { temp.push(ro90xv3(d)); }
+            connection_data.push(temp);
+        }
+    
+        if r180x {
+            let mut temp = Vec::new();
+            for d in self.connection_data.iter() { temp.push(ro180xv3(d)); }
+            // for d in data.iter() { if r180x { temp.push(ro180x(d)); } }
+            connection_data.push(temp);
+        }
+    
+        if r270x {
+            let mut temp = Vec::new();
+            for d in self.connection_data.iter() { temp.push(ro270xv3(d)); }
+            connection_data.push(temp);
+        }
+    
+        if r90y {
+            let mut temp = Vec::new();
+            for d in self.connection_data.iter() { temp.push(ro90yv3(d)); }
+            connection_data.push(temp);
+        }
+    
+        if r180y {
+            let mut temp = Vec::new();
+            for d in self.connection_data.iter() { temp.push(ro180yv3(d)); }
+            connection_data.push(temp);
+        }
+    
+        if r270y {
+            let mut temp = Vec::new();
+            for d in self.connection_data.iter() { temp.push(ro270yv3(d)); }
+            connection_data.push(temp);
+        }
+    
+        if r90z {
+            let mut temp = Vec::new();
+            for d in self.connection_data.iter() { temp.push(ro90zv3(d)); }
+            connection_data.push(temp);
+        }
+    
+        if r180z {
+            let mut temp = Vec::new();
+            for d in self.connection_data.iter() { temp.push(ro180zv3(d)); }
+            connection_data.push(temp);
+        }
+    
+        if r270z {
+            let mut temp = Vec::new();
+            for d in self.connection_data.iter() { temp.push(ro270zv3(d)); }
+            connection_data.push(temp);
+        }
+        // Not checked yet.
+        if mir_x {
+            let mut temp = Vec::new();
+            for d in self.connection_data.iter() { temp.push(mirror_xv3(d)); }
+            connection_data.push(temp);
+        }
+        // Not checked yet.
+        if mir_y {
+            let mut temp = Vec::new();
+            for d in self.connection_data.iter() { temp.push(mirror_yv3(d)); }
+            connection_data.push(temp);
+        }
+        // Not checked yet.
+        if mir_z {
+            let mut temp = Vec::new();
+            for d in self.connection_data.iter() { temp.push(mirror_zv3(d)); }
+            connection_data.push(temp);
+        }
+        assert!(connection_data.len() > 0);
+        
+        // TODO: Rotate render data!!!!!
+        WfcBlock::init(id, self.dimension, connection_data[0].clone(), self.render_data.clone())
+    }
 }

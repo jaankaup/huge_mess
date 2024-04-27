@@ -1,3 +1,5 @@
+use crate::wfc_misc::test_data_v3;
+use crate::wfc_misc::WfcBlock;
 use crate::wfc_misc::Voxel;
 use crate::wfc_misc::check_connections;
 use std::cmp::Reverse;
@@ -183,122 +185,206 @@ impl Application for WfcPart2App {
             let color_180: f32 = unsafe {transmute::<u32, f32>(0xFFFFFFFF)};
             let color_270: f32 = unsafe {transmute::<u32, f32>(0x0F0FFFFF)};
 
-            let test = test_data(0xFFFF00FF);
+            let test = test_data_v3();
+            let first_block = WfcBlock::init(0, 5, test.clone(), vec![]); 
+            let second_block = first_block.create_rotation(0b10000, 1);
+            let third_block = first_block.create_rotation( 0b100000, 2);
+            let fourth_block = first_block.create_rotation(0b1000000, 3);
+
+            let mut base_position = [0.0, 0.0, 0.0];
+            for x in first_block.get_connection_data().iter() { 
+                self.temp_aabbs.push(
+                    AABB {
+                        min: [x[0],       x[1]       , x[2]      , color],
+                        max: [x[0] + 1.0, x[1] + 1.0 , x[2] - 1.0, color],
+                    });
+            }
+            base_position[0] += 5.0;
+            for x in second_block.get_connection_data().iter() { 
+                self.temp_aabbs.push(
+                    AABB {
+                        min: [base_position[0] + x[0],       x[1]       , x[2]      , color],
+                        max: [base_position[0] + x[0] + 1.0, x[1] + 1.0 , x[2] - 1.0, color],
+                    });
+            }
+            base_position[0] += 5.0;
+            for x in third_block.get_connection_data().iter() { 
+                self.temp_aabbs.push(
+                    AABB {
+                        min: [base_position[0] + x[0],       x[1]       , x[2]      , color],
+                        max: [base_position[0] + x[0] + 1.0, x[1] + 1.0 , x[2] - 1.0, color],
+                    });
+            }
+            base_position[0] += 5.0;
+            for x in fourth_block.get_connection_data().iter() { 
+                self.temp_aabbs.push(
+                    AABB {
+                        min: [base_position[0] + x[0],       x[1]       , x[2]      , color],
+                        max: [base_position[0] + x[0] + 1.0, x[1] + 1.0 , x[2] - 1.0, color],
+                    });
+            }
             // // let all_rotations = create_rotations(0b111111111, &test);
             // let mut base_position = [0.0, 0.0, 0.0];
 
             // let connections = check_connections(&test, &test, 0b1111111111);
             // println!("connections = {:?}", connections);
-            let mut voxel = Voxel::init(0, 0b1111111111, 5, 0.0, &test, &vec![]);
-            voxel.add_rules(&voxel.clone());
-            self.voxels.insert(voxel.id, voxel);
+            //++ let mut voxel = Voxel::init(0, 0b1111111111, 5, 0.0, &test, &vec![]);
+            //++ let all_rotations = voxel.get_all_rotations();
+            //++ // Create hash for all rotations.
+            //++ println!("HASH");
+            //++ // let mut rotation_table = Vec::new(); 
+            //++ for (i, rotation) in all_rotations.iter().enumerate() {
+            //++     // Create a rotation for all cases. 
+            //++     for b in 0..10 {
+            //++         // println!("Rotation data for rotation case {:?}", b);
+            //++         let mut rotated = create_rotations(1 << b, rotation)[0].iter().map(|x| [x[0] as i32, x[1] as i32, x[2] as i32]).collect::<Vec<_>>();
+            //++         rotated.sort();
+            //++         // Search for original index that has same content so we create mapping.
+            //++         let mut found = false;
+            //++         for (original_index, r) in all_rotations.iter().enumerate() {
 
-            // Get the rotations for it self.
-            // HashMap<u32, [u32 ; 6]> 
-            let neighbors = self.voxels.get(&0).as_ref().unwrap().get_possible_neighbors(0b1);
-            let identity_connection = &self.voxels.get(&0).unwrap().connection_data;
+            //++             let mut original_sorted = (*r).iter().map(|x| [x[0] as i32, x[1] as i32, x[2] as i32]).collect::<Vec<_>>();
+            //++             original_sorted.sort();
+            //++             if original_sorted == rotated {
+            //++                 println!("{:?} => {:?}", b,  original_index);
+            //++                 found = true;
+            //++                 break;
+            //++             }
+            //++         }
+            //++         if !found {
+            //++             println!("PRKL");
+            //++         }
+            //++         //rotation_table.push(create_rotations(1 << b, rotation));
+            //++     }
+            //++     // Check the new index for 
+            //++ }
+            //++ println!("TABLE:::::::::::::::::::::::");
+            //++ // println!("{:?}", rotation_table);
+            //++ // Fix the roration table.
+            //++ for r in 0..10 {
+            //++     print!("{:?}   ", r); 
+            //++ }
+            //++ println!(""); 
+            //++ // for r in rotation_table.iter() {
+            //++ //     // for (i, original) in all_rotations.iter().enumerate() {
+            //++ //     //     if original == r {
+            //++ //     //         print!("{:?}   ", i); 
+            //++ //     //         break;
+            //++ //     //     }
+            //++ //     //     println!("");
+            //++ //     // }
+            //++ // }
 
-            for x in identity_connection.iter() { 
-            self.temp_aabbs.push(
-                AABB {
-                    min: [x[0],       x[1]       , x[2]      , color],
-                    max: [x[0] + 1.0, x[1] + 1.0 , x[2] - 1.0, color],
-                });
-            }
+            //++ println!("END HASH");
+            //++ voxel.add_rules(&voxel.clone());
+            //++ self.voxels.insert(voxel.id, voxel);
 
-            // let mut base_position = [0.0, 0.0, 0.0];
+            //++ // Get the rotations for it self.
+            //++ // HashMap<u32, [u32 ; 6]> 
+            //++ // let neighbors = self.voxels.get(&0).as_ref().unwrap().get_possible_neighbors(0b1);
+            //++ let neighbors = self.voxels.get(&0).as_ref().unwrap().get_possible_neighbors(0b1);
+            //++ let current_rotation_data = self.voxels.get(&0).as_ref().unwrap().get_rotated_connection_data(0b1);
+            //++ for vec in current_rotation_data.iter() { 
+            //++     for x in vec.iter() { 
+            //++         self.temp_aabbs.push(
+            //++             AABB {
+            //++                 min: [x[0],       x[1]       , x[2]      , color],
+            //++                 max: [x[0] + 1.0, x[1] + 1.0 , x[2] - 1.0, color],
+            //++             });
+            //++         }
+            //++ }
 
-            // Iterate over all neighbors.
-            for (k, v) in neighbors.iter() {
-                // Get the reference to voxel.
-                let neighbor = self.voxels.get(&k).as_ref().unwrap().clone();
-                println!("neighbor == {:?}", neighbor);
-                println!("v == {:?}", v);
+            //++ // Iterate over all neighbors.
+            //++ for (k, v) in neighbors.iter() {
+            //++     // Get the reference to voxel.
+            //++     let neighbor = self.voxels.get(&k).as_ref().unwrap().clone();
+            //++     // println!("neighbor == {:?}", neighbor);
+            //++     // println!("v == {:?}", v);
 
-                // Get directions for rendering 0 :: x+  1 :: x-  y+ :: 2  y- :: 3  z+ :: 4  z- :: 5
-                for (direction_index, cases_per_dir) in v.iter().enumerate() {
+            //++     // Get directions for rendering 0 :: x+  1 :: x-  y+ :: 2  y- :: 3  z+ :: 4  z- :: 5
+            //++     for (direction_index, cases_per_dir) in v.iter().enumerate() {
 
-                    let mut base_position = [0.0, 0.0, 0.0];
-                    println!("{:?} :: {:?}", direction_index, cases_per_dir);
+            //++         let mut base_position = [0.0, 0.0, 0.0];
+            //++         println!("{:?} :: {:?}", direction_index, cases_per_dir);
 
-                    // Vector of rendering cubes.
-                    let rotations = create_rotations(*cases_per_dir, &neighbor.connection_data);
+            //++         // Vector of rendering cubes.
+            //++         let rotations = create_rotations(*cases_per_dir, &neighbor.connection_data);
 
-                    const base_increment: [[f32; 3]; 6]
-                        = [[ 5.0,  0.0,  0.0],
-                           [-5.0,  0.0,  0.0],
-                           [ 0.0,  5.0,  0.0],
-                           [ 0.0, -5.0,  0.0],
-                           [ 0.0,  0.0,  5.0],
-                           [ 0.0,  0.0, -5.0]];
-
-
-                     base_position[0] += base_increment[direction_index][0];
-                     base_position[1] += base_increment[direction_index][1];
-                     base_position[2] += base_increment[direction_index][2];
-                     
-                     for sub_case in rotations.iter() {
-                         for x in sub_case.iter() {
-                             self.temp_aabbs.push(
-                                 AABB {
-                                     min: [x[0] + base_position[0],       x[1]       + base_position[1] , x[2] + base_position[2], color_red],
-                                     max: [x[0] + base_position[0] + 1.0, x[1] + 1.0 + base_position[1] , x[2] + base_position[2] - 1.0, color_red],
-                                 });
-                         }
-                         base_position[0] += base_increment[direction_index][0];
-                         base_position[1] += base_increment[direction_index][1];
-                         base_position[2] += base_increment[direction_index][2];
-                     }
-                }
-
-
-                //++     for c in 0..*cases_per_dir {
-                //++         let rotations = create_rotations(c, &neighbor.connection_data);
-
-                //++         // x+
-                //++         if direction_index == 0 {
-
-                //++             for rotation in rotations.iter() {
-                //++                 base_position[0] += 5.0;
-                //++                 for x in rotation.iter() {
-                //++                     self.temp_aabbs.push(
-                //++                         AABB {
-                //++                             min: [x[0] + base_position[0],       x[1]       + base_position[1] , x[2] + base_position[2], color_red],
-                //++                             max: [x[0] + base_position[0] + 1.0, x[1] + 1.0 + base_position[1] , x[2] + base_position[2] - 1.0, color_red],
-                //++                         });
-                //++                 }
-                //++             }
-                //++         }
-                //++         // // x-
-                //++         // if direction_index == 1 {
-                //++         //     base_position[0] -= 5.0;
-                //++         // }
-                //++         // // y+
-                //++         // if direction_index == 0 {
-                //++         //     base_position[1] += 5.0;
-                //++         // }
-                //++         // // y-
-                //++         // if direction_index == 1 {
-                //++         //     base_position[1] -= 5.0;
-                //++         // }
-                //++         // // z+
-                //++         // if direction_index == 0 {
-                //++         //     base_position[2] += 5.0;
-                //++         // }
-                //++         // // z-
-                //++         // if direction_index == 1 {
-                //++         //     base_position[2] -= 5.0;
-                //++         // }
-
-                //++     }
+            //++         const base_increment: [[f32; 3]; 6]
+            //++             = [[ 5.0,  0.0,  0.0],
+            //++                [-5.0,  0.0,  0.0],
+            //++                [ 0.0,  5.0,  0.0],
+            //++                [ 0.0, -5.0,  0.0],
+            //++                [ 0.0,  0.0,  5.0],
+            //++                [ 0.0,  0.0, -5.0]];
 
 
-                //++ }
-                // let rotated_voxel_data = neighbor.get_rotated_connection_data(
-                // for (index, rot) in v.enumerate() {
-                //     let rotations = create_rotations(rot);
-                // }
-            }
+            //++          base_position[0] += base_increment[direction_index][0];
+            //++          base_position[1] += base_increment[direction_index][1];
+            //++          base_position[2] += base_increment[direction_index][2];
+            //++          
+            //++          for sub_case in rotations.iter() {
+            //++              for x in sub_case.iter() {
+            //++                  self.temp_aabbs.push(
+            //++                      AABB {
+            //++                          min: [x[0] + base_position[0],       x[1]       + base_position[1] , x[2] + base_position[2], color_red],
+            //++                          max: [x[0] + base_position[0] + 1.0, x[1] + 1.0 + base_position[1] , x[2] + base_position[2] - 1.0, color_red],
+            //++                      });
+            //++              }
+            //++              base_position[0] += base_increment[direction_index][0];
+            //++              base_position[1] += base_increment[direction_index][1];
+            //++              base_position[2] += base_increment[direction_index][2];
+            //++          }
+            //++     }
+
+
+            //++     //++     for c in 0..*cases_per_dir {
+            //++     //++         let rotations = create_rotations(c, &neighbor.connection_data);
+
+            //++     //++         // x+
+            //++     //++         if direction_index == 0 {
+
+            //++     //++             for rotation in rotations.iter() {
+            //++     //++                 base_position[0] += 5.0;
+            //++     //++                 for x in rotation.iter() {
+            //++     //++                     self.temp_aabbs.push(
+            //++     //++                         AABB {
+            //++     //++                             min: [x[0] + base_position[0],       x[1]       + base_position[1] , x[2] + base_position[2], color_red],
+            //++     //++                             max: [x[0] + base_position[0] + 1.0, x[1] + 1.0 + base_position[1] , x[2] + base_position[2] - 1.0, color_red],
+            //++     //++                         });
+            //++     //++                 }
+            //++     //++             }
+            //++     //++         }
+            //++     //++         // // x-
+            //++     //++         // if direction_index == 1 {
+            //++     //++         //     base_position[0] -= 5.0;
+            //++     //++         // }
+            //++     //++         // // y+
+            //++     //++         // if direction_index == 0 {
+            //++     //++         //     base_position[1] += 5.0;
+            //++     //++         // }
+            //++     //++         // // y-
+            //++     //++         // if direction_index == 1 {
+            //++     //++         //     base_position[1] -= 5.0;
+            //++     //++         // }
+            //++     //++         // // z+
+            //++     //++         // if direction_index == 0 {
+            //++     //++         //     base_position[2] += 5.0;
+            //++     //++         // }
+            //++     //++         // // z-
+            //++     //++         // if direction_index == 1 {
+            //++     //++         //     base_position[2] -= 5.0;
+            //++     //++         // }
+
+            //++     //++     }
+
+
+            //++     //++ }
+            //++     // let rotated_voxel_data = neighbor.get_rotated_connection_data(
+            //++     // for (index, rot) in v.enumerate() {
+            //++     //     let rotations = create_rotations(rot);
+            //++     // }
+            //++ }
             // let rotations_x_plus_dir = create_rotations(connections[0], &test);
 
             // for x in test.iter() {
