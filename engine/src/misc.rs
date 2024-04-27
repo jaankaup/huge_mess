@@ -44,6 +44,7 @@ pub fn index_to_uvec3(index: u32, dim_x: u32, dim_y: u32) -> [u32 ; 3] {
     [x, y, z]
 }
 
+#[inline]
 pub fn uvec3_to_index(x: u32, y: u32, z: u32, dimX: u32, dimY: u32) -> u32 {
     x + y * dimX + z * dimX * dimY 
 }

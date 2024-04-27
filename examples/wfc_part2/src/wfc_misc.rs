@@ -1,5 +1,159 @@
+use std::cmp::Reverse;
+use std::collections::BinaryHeap;
 use std::collections::HashMap;
 use std::mem::transmute;
+use engine::misc::index_to_uvec3;
+use engine::misc::uvec3_to_index;
+
+use engine::gpu_debugger::primitive_processor::AABB;
+
+#[derive(Clone, Ord, PartialOrd, PartialEq, Eq)]
+pub enum WfcNode {
+    Known(u32),
+    Band(Vec<u32>),
+    Far,
+    // Invalid,
+}
+
+#[derive(Clone)]
+pub struct WfcScene {
+    dim_x: u32,
+    dim_y: u32,
+    dim_z: u32,
+    scene_data: Vec<WfcNode>,   
+    band: BinaryHeap<Reverse<WfcNode>>,
+    all_block_cases: Vec<WfcBlock>,
+    temp_aabbs: Vec<AABB>,
+}
+
+impl WfcScene {
+    pub fn init(dim_x: u32, dim_y: u32, dim_z: u32) -> Self {
+        Self {
+            dim_x: dim_x,
+            dim_y: dim_y,
+            dim_z: dim_z,
+            scene_data: vec![WfcNode::Far; (dim_x * dim_y * dim_x).try_into().unwrap()],   
+            band: BinaryHeap::new(),
+            all_block_cases: Vec::new(),
+            temp_aabbs: Vec::new(),
+        }
+    }
+
+    /// Insert a unique wfc block.
+    pub fn insert_block_case(&mut self, mut block: WfcBlock) {
+        block.id = self.all_block_cases.len() as u32;
+        self.all_block_cases.push(block);
+    }
+
+    pub fn get_aabb_data(&mut self) -> Vec<AABB> {
+        let aabbs = self.temp_aabbs.clone();
+        self.temp_aabbs.clear();
+        aabbs
+    }
+
+    /// Add a block to scene.
+    pub fn add_seed_point(&mut self, block_id: u32, coord: [u32; 3]) {
+
+        assert!(coord[0] < self.dim_x && coord[1] < self.dim_y && coord[2] < self.dim_z);
+        assert!(self.band.len() == 0);
+        assert!(block_id < self.all_block_cases.len().try_into().unwrap());
+
+        self.scene_data[uvec3_to_index(coord[0], coord[1], coord[2], self.dim_x, self.dim_y) as usize] = WfcNode::Known(block_id); 
+        let conn_data = self.all_block_cases[block_id as usize].get_connection_data();
+        self.debug_aabb(block_id, coord, &conn_data.clone());
+    }
+
+    pub fn find_neighbor_indices(&mut self, coord: [u32 ; 3]) -> [Option<u32>; 6] {
+
+        let ref_to_node = &self.scene_data[uvec3_to_index(coord[0], coord[1], coord[2], self.dim_x, self.dim_y) as usize];
+        // assert!(ref_to_node);
+
+        // Find all neighbor nodes;
+        let mut neighbors: [Option<u32> ; 6] = [None ; 6];
+
+        const directions: [[i32;3] ; 6] = [[1, 0, 0], [-1, 0, 0], [0, 1, 0], [0, -1, 0], [0, 0, 1], [0, 0, -1]]; 
+
+        // Neighbors.
+        for (i,d) in directions.iter().enumerate() {
+            let actual_index = [coord[0] as i32 + d[0], coord[1] as i32 + d[1], coord[2] as i32 + d[2]];   
+            if actual_index[0] >= 0 && actual_index[0] < self.dim_x.try_into().unwrap() &&
+                actual_index[1] >= 0 && actual_index[1] < self.dim_y.try_into().unwrap() &&
+                    actual_index[2] >= 0 && actual_index[2] < self.dim_z.try_into().unwrap() {
+                        neighbors[i] = Some(uvec3_to_index(
+                                                actual_index[0].try_into().unwrap(),
+                                                actual_index[1].try_into().unwrap(),
+                                                actual_index[2].try_into().unwrap(),
+                                                self.dim_x,
+                                                self.dim_y));
+            }
+        }
+
+        neighbors
+    }
+
+    pub fn expand_band_uvec3(&mut self, center_coord: [u32 ; 3]) {
+        // VALIDATION!
+        let center_index = uvec3_to_index(center_coord[0], center_coord[1], center_coord[2], self.dim_x, self.dim_y);   
+        self.expand_band(center_index);
+    }
+
+    pub fn expand_band(&mut self, center_index: u32) {
+        let coordinate = index_to_uvec3(center_index, self.dim_x, self.dim_y);   
+        let neighbor_indices = self.find_neighbor_indices(coordinate);
+        for ind in neighbor_indices.iter() {
+            if ind.is_some() {
+                let neighbor_ref = &mut self.scene_data[ind.unwrap() as usize];
+                match *neighbor_ref {
+                    WfcNode::Known(_) => {},
+                    WfcNode::Band(_) => {},
+                    WfcNode::Far => {
+                        *neighbor_ref = WfcNode::Band(Vec::new());
+
+                            // Debugging.
+                            let n_coordinate = index_to_uvec3(ind.unwrap(), self.dim_x, self.dim_y);
+                            let base_position = [n_coordinate[0] as f32 * 5.0, n_coordinate[1] as f32 * 5.0, n_coordinate[2] as f32 * 5.0];
+                            let color: f32 = unsafe {transmute::<u32, f32>(0x0000FFFF)};
+                            self.temp_aabbs.push(
+                                AABB {
+                                    min: [base_position[0],
+                                          base_position[1],
+                                          base_position[2],
+                                          color],
+                                    max: [base_position[0] + 1.0,
+                                          base_position[1] + 1.0,
+                                          base_position[2] + 1.0,
+                                          color],
+                                });
+
+                    },
+                }
+            }
+        }
+    }
+    
+    pub fn debug_aabb(&mut self, block_id: u32, coord: [u32 ; 3], conn_data: &Vec<[f32; 3]>) {
+
+        // For debugging reasons.
+        let block_size = self.all_block_cases[block_id as usize].get_dimension();
+        let base_position = [coord[0] as f32 * block_size as f32,
+                             coord[1] as f32 * block_size as f32,
+                             coord[2] as f32 * block_size as f32];
+        let color: f32 = unsafe {transmute::<u32, f32>(0xFFFF00FF)};
+        for x in conn_data.iter() {
+            self.temp_aabbs.push(
+                AABB {
+                    min: [base_position[0] + x[0] as f32,
+                          base_position[1] + x[1] as f32,
+                          base_position[2] + x[2] as f32,
+                          color],
+                    max: [base_position[0] + x[0] as f32 + 1.0, // TODO: not 1.0, a parameter
+                          base_position[1] + x[1] as f32 + 1.0, // TODO: not 1.0, a parameter
+                          base_position[2] + x[2] as f32 + 1.0, // TODO: not 1.0, a parameter
+                          color],
+                });
+        }
+    }
+}
 
 pub fn test_data(color: u32) -> Vec<[f32 ; 4]> {
 
@@ -651,16 +805,16 @@ pub fn reflect_z(vec: &[f32 ; 3]) -> [f32 ; 3] {
 
 /***********************************************************************************/
 
+#[derive(Clone)]
 pub struct WfcBlock {
 
-    id: u32,
+    pub id: u32,
     dimension: u32, // Symmetric matrix
     connection_data: Vec<[f32 ; 3]>,
     render_data: Vec<[f32 ; 4]>,
     neighbors: Vec<(u32, [u32 ; 6])>,
     match_data: Vec<Vec<[i32 ; 3]>>,
     match_inverted: Vec<Vec<[i32 ; 3]>>
-
 }
 
 impl WfcBlock {
@@ -713,6 +867,14 @@ impl WfcBlock {
                                  z_minus_inverted,
                                  z_plus_inverted],
         }
+    }
+
+    pub fn get_id(&self) -> u32 {
+        self.id
+    }
+
+    pub fn get_dimension(&self) -> u32 {
+        self.dimension
     }
 
     pub fn get_match_data(&self, direction: usize) -> &Vec<[i32; 3]> {

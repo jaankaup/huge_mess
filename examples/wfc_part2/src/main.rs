@@ -1,3 +1,4 @@
+use crate::wfc_misc::WfcScene;
 use crate::wfc_misc::test_data_v3;
 use crate::wfc_misc::WfcBlock;
 use crate::wfc_misc::Voxel;
@@ -60,6 +61,7 @@ struct WfcPart2App {
     temp_aabbs: Vec<AABB>,
     temp_arrows: Vec<Arrow>,
     voxels: HashMap<u32, Voxel>,
+    wfc_engine: WfcScene,
 }
 
 impl WfcPart2App {
@@ -122,6 +124,7 @@ impl Application for WfcPart2App {
             temp_aabbs: Vec::new(),
             temp_arrows: Vec::new(),
             voxels: HashMap::new(),
+            wfc_engine: WfcScene::init(32, 32, 32),
         }
     }
 
@@ -191,38 +194,47 @@ impl Application for WfcPart2App {
             let third_block = first_block.create_rotation( 0b100000, 2);
             let fourth_block = first_block.create_rotation(0b1000000, 3);
 
-            let mut base_position = [0.0, 0.0, 0.0];
-            for x in first_block.get_connection_data().iter() { 
-                self.temp_aabbs.push(
-                    AABB {
-                        min: [x[0],       x[1]       , x[2]      , color],
-                        max: [x[0] + 1.0, x[1] + 1.0 , x[2] - 1.0, color],
-                    });
-            }
-            base_position[0] += 5.0;
-            for x in second_block.get_connection_data().iter() { 
-                self.temp_aabbs.push(
-                    AABB {
-                        min: [base_position[0] + x[0],       x[1]       , x[2]      , color],
-                        max: [base_position[0] + x[0] + 1.0, x[1] + 1.0 , x[2] - 1.0, color],
-                    });
-            }
-            base_position[0] += 5.0;
-            for x in third_block.get_connection_data().iter() { 
-                self.temp_aabbs.push(
-                    AABB {
-                        min: [base_position[0] + x[0],       x[1]       , x[2]      , color],
-                        max: [base_position[0] + x[0] + 1.0, x[1] + 1.0 , x[2] - 1.0, color],
-                    });
-            }
-            base_position[0] += 5.0;
-            for x in fourth_block.get_connection_data().iter() { 
-                self.temp_aabbs.push(
-                    AABB {
-                        min: [base_position[0] + x[0],       x[1]       , x[2]      , color],
-                        max: [base_position[0] + x[0] + 1.0, x[1] + 1.0 , x[2] - 1.0, color],
-                    });
-            }
+            self.wfc_engine.insert_block_case(first_block);
+            self.wfc_engine.insert_block_case(second_block);
+            self.wfc_engine.insert_block_case(third_block);
+            self.wfc_engine.insert_block_case(fourth_block);
+
+            self.wfc_engine.add_seed_point(0, [5,5,5]);
+            self.wfc_engine.expand_band_uvec3([5,5,5]);
+
+            self.temp_aabbs.append(&mut self.wfc_engine.get_aabb_data());
+            // let mut base_position = [0.0, 0.0, 0.0];
+            // for x in first_block.get_connection_data().iter() { 
+            //     self.temp_aabbs.push(
+            //         AABB {
+            //             min: [x[0],       x[1]       , x[2]      , color],
+            //             max: [x[0] + 1.0, x[1] + 1.0 , x[2] - 1.0, color],
+            //         });
+            // }
+            // base_position[0] += 5.0;
+            // for x in second_block.get_connection_data().iter() { 
+            //     self.temp_aabbs.push(
+            //         AABB {
+            //             min: [base_position[0] + x[0],       x[1]       , x[2]      , color],
+            //             max: [base_position[0] + x[0] + 1.0, x[1] + 1.0 , x[2] - 1.0, color],
+            //         });
+            // }
+            // base_position[0] += 5.0;
+            // for x in third_block.get_connection_data().iter() { 
+            //     self.temp_aabbs.push(
+            //         AABB {
+            //             min: [base_position[0] + x[0],       x[1]       , x[2]      , color],
+            //             max: [base_position[0] + x[0] + 1.0, x[1] + 1.0 , x[2] - 1.0, color],
+            //         });
+            // }
+            // base_position[0] += 5.0;
+            // for x in fourth_block.get_connection_data().iter() { 
+            //     self.temp_aabbs.push(
+            //         AABB {
+            //             min: [base_position[0] + x[0],       x[1]       , x[2]      , color],
+            //             max: [base_position[0] + x[0] + 1.0, x[1] + 1.0 , x[2] - 1.0, color],
+            //         });
+            // }
             // // let all_rotations = create_rotations(0b111111111, &test);
             // let mut base_position = [0.0, 0.0, 0.0];
 
