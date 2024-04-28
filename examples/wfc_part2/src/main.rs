@@ -1,3 +1,14 @@
+use crate::wfc_misc::corner2;
+use crate::wfc_misc::corner;
+use crate::wfc_misc::test_data_ceiling_corner_2;
+use crate::wfc_misc::test_data_ceiling_corner;
+use crate::wfc_misc::test_data_floor_corner_3;
+use crate::wfc_misc::test_data_floor_corner_2;
+use crate::wfc_misc::test_data_floor_corner;
+use crate::wfc_misc::test_data_empty;
+use crate::wfc_misc::test_data_2x_ceiling_floor;
+use crate::wfc_misc::test_data_ceiling;
+use crate::wfc_misc::test_data_floor;
 use crate::wfc_misc::WfcScene;
 use crate::wfc_misc::test_data_v3;
 use crate::wfc_misc::WfcBlock;
@@ -79,15 +90,15 @@ impl Application for WfcPart2App {
         // Create camera.
         let mut camera = Camera::new(surface.config().width as f32,
                                      surface.config().height as f32,
-                                     (-15.0, 12.0, 28.0),
-                                     (0.0, 0.0, 0.0)
+                                     (-45.0, 132.0, 38.0),
+                                     (50.0, 0.0, 50.0)
         );
         camera.set_rotation_sensitivity(1.0);
         camera.set_movement_sensitivity(0.1);
 
         let draw_buffer = context.device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("WfcPart2DrawBuffer"),
-            size: 256*128*256*16 as u64,
+            size: 256*256*256*16 as u64,
             usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_SRC | wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_DST,
             mapped_at_creation: false,
         });
@@ -124,7 +135,7 @@ impl Application for WfcPart2App {
             temp_aabbs: Vec::new(),
             temp_arrows: Vec::new(),
             voxels: HashMap::new(),
-            wfc_engine: WfcScene::init(32, 32, 32),
+            wfc_engine: WfcScene::init(32, 8, 32),
         }
     }
 
@@ -193,309 +204,290 @@ impl Application for WfcPart2App {
             let second_block = first_block.create_rotation(0b10000, 1);
             let third_block = first_block.create_rotation( 0b100000, 2);
             let fourth_block = first_block.create_rotation(0b1000000, 3);
+            let block_5 = first_block.create_rotation(0b10, 3);
+            let block_6 = first_block.create_rotation(0b100, 3);
+            let block_7 = first_block.create_rotation(0b1000, 3);
+            let block_8 = first_block.create_rotation(0b1000000, 3);
+            let block_9 = first_block.create_rotation(0b10000000, 3);
+            let block_10 = first_block.create_rotation(0b100000000, 3);
 
             self.wfc_engine.insert_block_case(first_block);
             self.wfc_engine.insert_block_case(second_block);
             self.wfc_engine.insert_block_case(third_block);
             self.wfc_engine.insert_block_case(fourth_block);
+            self.wfc_engine.insert_block_case(block_5);
+            self.wfc_engine.insert_block_case(block_6);
+            self.wfc_engine.insert_block_case(block_7);
+            self.wfc_engine.insert_block_case(block_8);
+            self.wfc_engine.insert_block_case(block_9);
+            self.wfc_engine.insert_block_case(block_10);
+
+            // Floor
+            let floor = test_data_floor();
+            self.wfc_engine.insert_block_case(WfcBlock::init(0, 5, floor.clone(), vec![]));
+
+            // Ceiling
+            let ceiling = test_data_ceiling(); 
+            let ceiling_block = WfcBlock::init(0, 5, ceiling.clone(), vec![]);
+            let ceiling_second = ceiling_block.create_rotation(0b10000, 1);
+            let ceiling_third = ceiling_block.create_rotation(0b100000, 1);
+            let ceiling_fourth = ceiling_block.create_rotation(0b1000000, 1);
+            let ceiling_5 = ceiling_block.create_rotation(0b10, 1);
+            let ceiling_6 = ceiling_block.create_rotation(0b100, 1);
+            let ceiling_7 = ceiling_block.create_rotation(0b1000, 1);
+            let ceiling_8 = ceiling_block.create_rotation(0b10000000, 1);
+            let ceiling_9 = ceiling_block.create_rotation(0b10000000, 1);
+            let ceiling_10 = ceiling_block.create_rotation(0b100000000, 1);
+
+            self.wfc_engine.insert_block_case(ceiling_block);
+            self.wfc_engine.insert_block_case(ceiling_second);
+            self.wfc_engine.insert_block_case(ceiling_third);
+            self.wfc_engine.insert_block_case(ceiling_fourth);
+            self.wfc_engine.insert_block_case(ceiling_5);
+            self.wfc_engine.insert_block_case(ceiling_6);
+            self.wfc_engine.insert_block_case(ceiling_7);
+            self.wfc_engine.insert_block_case(ceiling_8);
+            self.wfc_engine.insert_block_case(ceiling_9);
+            self.wfc_engine.insert_block_case(ceiling_10);
+
+            // Ceiling x 2 + floor
+            let c2f = test_data_2x_ceiling_floor();
+            let c2f_0 = WfcBlock::init(0, 5, c2f.clone(), vec![]);
+            let c2f_1 = c2f_0.create_rotation(0b10, 1);
+            let c2f_2 = c2f_0.create_rotation(0b100, 1);
+            let c2f_3 = c2f_0.create_rotation(0b1000, 1);
+            let c2f_4 = c2f_0.create_rotation(0b10000, 1);
+            let c2f_5 = c2f_0.create_rotation(0b100000, 1);
+            let c2f_6 = c2f_0.create_rotation(0b1000000, 1);
+            let c2f_7 = c2f_0.create_rotation(0b10000000, 1);
+            let c2f_8 = c2f_0.create_rotation(0b10000000, 1);
+            let c2f_9 = c2f_0.create_rotation(0b100000000, 1);
+
+            self.wfc_engine.insert_block_case(c2f_0);
+            self.wfc_engine.insert_block_case(c2f_1);
+            self.wfc_engine.insert_block_case(c2f_2);
+            self.wfc_engine.insert_block_case(c2f_3);
+            self.wfc_engine.insert_block_case(c2f_4);
+            self.wfc_engine.insert_block_case(c2f_5);
+            self.wfc_engine.insert_block_case(c2f_6);
+            self.wfc_engine.insert_block_case(c2f_7);
+            self.wfc_engine.insert_block_case(c2f_8);
+            self.wfc_engine.insert_block_case(c2f_9);
+
+            let floor_corner = test_data_floor_corner();
+            let floor_corner_0 = WfcBlock::init(0, 5, floor_corner.clone(), vec![]);
+            let floor_corner_1 = floor_corner_0.create_rotation(0b10, 1);
+            let floor_corner_2 = floor_corner_0.create_rotation(0b100, 1);
+            let floor_corner_3 = floor_corner_0.create_rotation(0b1000, 1);
+            let floor_corner_4 = floor_corner_0.create_rotation(0b10000, 1);
+            let floor_corner_5 = floor_corner_0.create_rotation(0b100000, 1);
+            let floor_corner_6 = floor_corner_0.create_rotation(0b1000000, 1);
+            let floor_corner_7 = floor_corner_0.create_rotation(0b10000000, 1);
+            let floor_corner_8 = floor_corner_0.create_rotation(0b100000000, 1);
+            let floor_corner_9 = floor_corner_0.create_rotation(0b1000000000, 1);
+
+            self.wfc_engine.insert_block_case(floor_corner_0);
+            self.wfc_engine.insert_block_case(floor_corner_1);
+            self.wfc_engine.insert_block_case(floor_corner_2);
+            self.wfc_engine.insert_block_case(floor_corner_3);
+            self.wfc_engine.insert_block_case(floor_corner_4);
+            self.wfc_engine.insert_block_case(floor_corner_5);
+            self.wfc_engine.insert_block_case(floor_corner_6);
+            self.wfc_engine.insert_block_case(floor_corner_7);
+            self.wfc_engine.insert_block_case(floor_corner_8);
+            self.wfc_engine.insert_block_case(floor_corner_9);
+
+            let floor_corner_2 = test_data_floor_corner_2();
+            let floor_corner_2_0 = WfcBlock::init(0, 5, floor_corner_2.clone(), vec![]);
+            let floor_corner_2_1 = floor_corner_2_0.create_rotation(0b10, 1);
+            let floor_corner_2_2 = floor_corner_2_0.create_rotation(0b100, 1);
+            let floor_corner_2_3 = floor_corner_2_0.create_rotation(0b1000, 1);
+            let floor_corner_2_4 = floor_corner_2_0.create_rotation(0b10000, 1);
+            let floor_corner_2_5 = floor_corner_2_0.create_rotation(0b100000, 1);
+            let floor_corner_2_6 = floor_corner_2_0.create_rotation(0b1000000, 1);
+            let floor_corner_2_7 = floor_corner_2_0.create_rotation(0b10000000, 1);
+            let floor_corner_2_8 = floor_corner_2_0.create_rotation(0b100000000, 1);
+            let floor_corner_2_9 = floor_corner_2_0.create_rotation(0b1000000000, 1);
+
+            self.wfc_engine.insert_block_case(floor_corner_2_0);
+            self.wfc_engine.insert_block_case(floor_corner_2_1);
+            self.wfc_engine.insert_block_case(floor_corner_2_2);
+            self.wfc_engine.insert_block_case(floor_corner_2_3);
+            self.wfc_engine.insert_block_case(floor_corner_2_4);
+            self.wfc_engine.insert_block_case(floor_corner_2_5);
+            self.wfc_engine.insert_block_case(floor_corner_2_6);
+            self.wfc_engine.insert_block_case(floor_corner_2_7);
+            self.wfc_engine.insert_block_case(floor_corner_2_8);
+            self.wfc_engine.insert_block_case(floor_corner_2_9);
+
+            let floor_corner_3 = test_data_floor_corner_3();
+            let floor_corner_3_0 = WfcBlock::init(0, 5, floor_corner_3.clone(), vec![]);
+            let floor_corner_3_1 = floor_corner_3_0.create_rotation(0b10, 1);
+            let floor_corner_3_2 = floor_corner_3_0.create_rotation(0b100, 1);
+            let floor_corner_3_3 = floor_corner_3_0.create_rotation(0b1000, 1);
+            let floor_corner_3_4 = floor_corner_3_0.create_rotation(0b10000, 1);
+            let floor_corner_3_5 = floor_corner_3_0.create_rotation(0b100000, 1);
+            let floor_corner_3_6 = floor_corner_3_0.create_rotation(0b1000000, 1);
+            let floor_corner_3_7 = floor_corner_3_0.create_rotation(0b10000000, 1);
+            let floor_corner_3_8 = floor_corner_3_0.create_rotation(0b100000000, 1);
+            let floor_corner_3_9 = floor_corner_3_0.create_rotation(0b1000000000, 1);
+
+            self.wfc_engine.insert_block_case(floor_corner_3_0);
+            self.wfc_engine.insert_block_case(floor_corner_3_1);
+            self.wfc_engine.insert_block_case(floor_corner_3_2);
+            self.wfc_engine.insert_block_case(floor_corner_3_3);
+            self.wfc_engine.insert_block_case(floor_corner_3_4);
+            self.wfc_engine.insert_block_case(floor_corner_3_5);
+            self.wfc_engine.insert_block_case(floor_corner_3_6);
+            self.wfc_engine.insert_block_case(floor_corner_3_7);
+            self.wfc_engine.insert_block_case(floor_corner_3_8);
+            self.wfc_engine.insert_block_case(floor_corner_3_9);
+
+            let ceiling_corner = test_data_ceiling_corner();
+            let ceiling_corner_0 = WfcBlock::init(0, 5, ceiling_corner.clone(), vec![]);
+            let ceiling_corner_1 = ceiling_corner_0.create_rotation(0b10, 1);
+            let ceiling_corner_2 = ceiling_corner_0.create_rotation(0b100, 1);
+            let ceiling_corner_3 = ceiling_corner_0.create_rotation(0b1000, 1);
+            let ceiling_corner_4 = ceiling_corner_0.create_rotation(0b10000, 1);
+            let ceiling_corner_5 = ceiling_corner_0.create_rotation(0b100000, 1);
+            let ceiling_corner_6 = ceiling_corner_0.create_rotation(0b1000000, 1);
+            let ceiling_corner_7 = ceiling_corner_0.create_rotation(0b10000000, 1);
+            let ceiling_corner_8 = ceiling_corner_0.create_rotation(0b100000000, 1);
+            let ceiling_corner_9 = ceiling_corner_0.create_rotation(0b1000000000, 1);
+
+            self.wfc_engine.insert_block_case(ceiling_corner_0);
+            self.wfc_engine.insert_block_case(ceiling_corner_1);
+            self.wfc_engine.insert_block_case(ceiling_corner_2);
+            self.wfc_engine.insert_block_case(ceiling_corner_3);
+            self.wfc_engine.insert_block_case(ceiling_corner_4);
+            self.wfc_engine.insert_block_case(ceiling_corner_5);
+            self.wfc_engine.insert_block_case(ceiling_corner_6);
+            self.wfc_engine.insert_block_case(ceiling_corner_7);
+            self.wfc_engine.insert_block_case(ceiling_corner_8);
+            self.wfc_engine.insert_block_case(ceiling_corner_9);
+
+            let ceiling_corner_2 = test_data_ceiling_corner_2();
+            let ceiling_corner_2_0 = WfcBlock::init(0, 5, ceiling_corner_2.clone(), vec![]);
+            let ceiling_corner_2_1 = ceiling_corner_2_0.create_rotation(0b10, 1);
+            let ceiling_corner_2_2 = ceiling_corner_2_0.create_rotation(0b100, 1);
+            let ceiling_corner_2_3 = ceiling_corner_2_0.create_rotation(0b1000, 1);
+            let ceiling_corner_2_4 = ceiling_corner_2_0.create_rotation(0b10000, 1);
+            let ceiling_corner_2_5 = ceiling_corner_2_0.create_rotation(0b100000, 1);
+            let ceiling_corner_2_6 = ceiling_corner_2_0.create_rotation(0b1000000, 1);
+            let ceiling_corner_2_7 = ceiling_corner_2_0.create_rotation(0b10000000, 1);
+            let ceiling_corner_2_8 = ceiling_corner_2_0.create_rotation(0b100000000, 1);
+            let ceiling_corner_2_9 = ceiling_corner_2_0.create_rotation(0b1000000000, 1);
+
+            self.wfc_engine.insert_block_case(ceiling_corner_2_0);
+            self.wfc_engine.insert_block_case(ceiling_corner_2_1);
+            self.wfc_engine.insert_block_case(ceiling_corner_2_2);
+            self.wfc_engine.insert_block_case(ceiling_corner_2_3);
+            self.wfc_engine.insert_block_case(ceiling_corner_2_4);
+            self.wfc_engine.insert_block_case(ceiling_corner_2_5);
+            self.wfc_engine.insert_block_case(ceiling_corner_2_6);
+            self.wfc_engine.insert_block_case(ceiling_corner_2_7);
+            self.wfc_engine.insert_block_case(ceiling_corner_2_8);
+            self.wfc_engine.insert_block_case(ceiling_corner_2_9);
+
+            let corner = corner();
+            let corner_0 = WfcBlock::init(0, 5, corner.clone(), vec![]);
+            let corner_1 = corner_0.create_rotation(0b10, 1);
+            let corner_2 = corner_0.create_rotation(0b100, 1);
+            let corner_3 = corner_0.create_rotation(0b1000, 1);
+            let corner_4 = corner_0.create_rotation(0b10000, 1);
+            let corner_5 = corner_0.create_rotation(0b100000, 1);
+            let corner_6 = corner_0.create_rotation(0b1000000, 1);
+            let corner_7 = corner_0.create_rotation(0b10000000, 1);
+            let corner_8 = corner_0.create_rotation(0b100000000, 1);
+            let corner_9 = corner_0.create_rotation(0b1000000000, 1);
+
+            self.wfc_engine.insert_block_case(corner_0);
+            self.wfc_engine.insert_block_case(corner_1);
+            self.wfc_engine.insert_block_case(corner_2);
+            self.wfc_engine.insert_block_case(corner_3);
+            self.wfc_engine.insert_block_case(corner_4);
+            self.wfc_engine.insert_block_case(corner_5);
+            self.wfc_engine.insert_block_case(corner_6);
+            self.wfc_engine.insert_block_case(corner_7);
+            self.wfc_engine.insert_block_case(corner_8);
+            self.wfc_engine.insert_block_case(corner_9);
+
+            let corner2 = corner2();
+            let corner2_0 = WfcBlock::init(0, 5, corner2.clone(), vec![]);
+            let corner2_1 = corner2_0.create_rotation(0b10, 1);
+            let corner2_2 = corner2_0.create_rotation(0b100, 1);
+            let corner2_3 = corner2_0.create_rotation(0b1000, 1);
+            let corner2_4 = corner2_0.create_rotation(0b10000, 1);
+            let corner2_5 = corner2_0.create_rotation(0b100000, 1);
+            let corner2_6 = corner2_0.create_rotation(0b1000000, 1);
+            let corner2_7 = corner2_0.create_rotation(0b10000000, 1);
+            let corner2_8 = corner2_0.create_rotation(0b100000000, 1);
+            let corner2_9 = corner2_0.create_rotation(0b1000000000, 1);
+
+            self.wfc_engine.insert_block_case(corner2_0);
+            self.wfc_engine.insert_block_case(corner2_1);
+            self.wfc_engine.insert_block_case(corner2_2);
+            self.wfc_engine.insert_block_case(corner2_3);
+            self.wfc_engine.insert_block_case(corner2_4);
+            self.wfc_engine.insert_block_case(corner2_5);
+            self.wfc_engine.insert_block_case(corner2_6);
+            self.wfc_engine.insert_block_case(corner2_7);
+            self.wfc_engine.insert_block_case(corner2_8);
+            self.wfc_engine.insert_block_case(corner2_9);
+            // Empty
+            let empty = test_data_empty();
+            let empty_block = WfcBlock::init(0, 5, empty.clone(), vec![]);
+            self.wfc_engine.insert_block_case(empty_block);
 
             self.wfc_engine.add_seed_point(0, [5,5,5]);
             self.wfc_engine.expand_band_uvec3([5,5,5]);
 
+            for i in 0..6000 {
+
+            let candidates = self.wfc_engine.find_next_known_candidates().unwrap();
+            // println!("CANDIDATES : {:?}", candidates);
+
+            let mut rng = rand::thread_rng();
+            let r: u32 = rng.gen_range(0..candidates.len()).try_into().unwrap();
+
+            let next_candidate = candidates[r as usize];
+            // println!("The next candidate is {:?}", next_candidate);
+            self.wfc_engine.make_known(next_candidate);
+            self.wfc_engine.expand_band(next_candidate);
+
             self.temp_aabbs.append(&mut self.wfc_engine.get_aabb_data());
-            // let mut base_position = [0.0, 0.0, 0.0];
-            // for x in first_block.get_connection_data().iter() { 
-            //     self.temp_aabbs.push(
-            //         AABB {
-            //             min: [x[0],       x[1]       , x[2]      , color],
-            //             max: [x[0] + 1.0, x[1] + 1.0 , x[2] - 1.0, color],
-            //         });
-            // }
-            // base_position[0] += 5.0;
-            // for x in second_block.get_connection_data().iter() { 
-            //     self.temp_aabbs.push(
-            //         AABB {
-            //             min: [base_position[0] + x[0],       x[1]       , x[2]      , color],
-            //             max: [base_position[0] + x[0] + 1.0, x[1] + 1.0 , x[2] - 1.0, color],
-            //         });
-            // }
-            // base_position[0] += 5.0;
-            // for x in third_block.get_connection_data().iter() { 
-            //     self.temp_aabbs.push(
-            //         AABB {
-            //             min: [base_position[0] + x[0],       x[1]       , x[2]      , color],
-            //             max: [base_position[0] + x[0] + 1.0, x[1] + 1.0 , x[2] - 1.0, color],
-            //         });
-            // }
-            // base_position[0] += 5.0;
-            // for x in fourth_block.get_connection_data().iter() { 
-            //     self.temp_aabbs.push(
-            //         AABB {
-            //             min: [base_position[0] + x[0],       x[1]       , x[2]      , color],
-            //             max: [base_position[0] + x[0] + 1.0, x[1] + 1.0 , x[2] - 1.0, color],
-            //         });
-            // }
-            // // let all_rotations = create_rotations(0b111111111, &test);
-            // let mut base_position = [0.0, 0.0, 0.0];
-
-            // let connections = check_connections(&test, &test, 0b1111111111);
-            // println!("connections = {:?}", connections);
-            //++ let mut voxel = Voxel::init(0, 0b1111111111, 5, 0.0, &test, &vec![]);
-            //++ let all_rotations = voxel.get_all_rotations();
-            //++ // Create hash for all rotations.
-            //++ println!("HASH");
-            //++ // let mut rotation_table = Vec::new(); 
-            //++ for (i, rotation) in all_rotations.iter().enumerate() {
-            //++     // Create a rotation for all cases. 
-            //++     for b in 0..10 {
-            //++         // println!("Rotation data for rotation case {:?}", b);
-            //++         let mut rotated = create_rotations(1 << b, rotation)[0].iter().map(|x| [x[0] as i32, x[1] as i32, x[2] as i32]).collect::<Vec<_>>();
-            //++         rotated.sort();
-            //++         // Search for original index that has same content so we create mapping.
-            //++         let mut found = false;
-            //++         for (original_index, r) in all_rotations.iter().enumerate() {
-
-            //++             let mut original_sorted = (*r).iter().map(|x| [x[0] as i32, x[1] as i32, x[2] as i32]).collect::<Vec<_>>();
-            //++             original_sorted.sort();
-            //++             if original_sorted == rotated {
-            //++                 println!("{:?} => {:?}", b,  original_index);
-            //++                 found = true;
-            //++                 break;
-            //++             }
-            //++         }
-            //++         if !found {
-            //++             println!("PRKL");
-            //++         }
-            //++         //rotation_table.push(create_rotations(1 << b, rotation));
-            //++     }
-            //++     // Check the new index for 
-            //++ }
-            //++ println!("TABLE:::::::::::::::::::::::");
-            //++ // println!("{:?}", rotation_table);
-            //++ // Fix the roration table.
-            //++ for r in 0..10 {
-            //++     print!("{:?}   ", r); 
-            //++ }
-            //++ println!(""); 
-            //++ // for r in rotation_table.iter() {
-            //++ //     // for (i, original) in all_rotations.iter().enumerate() {
-            //++ //     //     if original == r {
-            //++ //     //         print!("{:?}   ", i); 
-            //++ //     //         break;
-            //++ //     //     }
-            //++ //     //     println!("");
-            //++ //     // }
-            //++ // }
-
-            //++ println!("END HASH");
-            //++ voxel.add_rules(&voxel.clone());
-            //++ self.voxels.insert(voxel.id, voxel);
-
-            //++ // Get the rotations for it self.
-            //++ // HashMap<u32, [u32 ; 6]> 
-            //++ // let neighbors = self.voxels.get(&0).as_ref().unwrap().get_possible_neighbors(0b1);
-            //++ let neighbors = self.voxels.get(&0).as_ref().unwrap().get_possible_neighbors(0b1);
-            //++ let current_rotation_data = self.voxels.get(&0).as_ref().unwrap().get_rotated_connection_data(0b1);
-            //++ for vec in current_rotation_data.iter() { 
-            //++     for x in vec.iter() { 
-            //++         self.temp_aabbs.push(
-            //++             AABB {
-            //++                 min: [x[0],       x[1]       , x[2]      , color],
-            //++                 max: [x[0] + 1.0, x[1] + 1.0 , x[2] - 1.0, color],
-            //++             });
-            //++         }
-            //++ }
-
-            //++ // Iterate over all neighbors.
-            //++ for (k, v) in neighbors.iter() {
-            //++     // Get the reference to voxel.
-            //++     let neighbor = self.voxels.get(&k).as_ref().unwrap().clone();
-            //++     // println!("neighbor == {:?}", neighbor);
-            //++     // println!("v == {:?}", v);
-
-            //++     // Get directions for rendering 0 :: x+  1 :: x-  y+ :: 2  y- :: 3  z+ :: 4  z- :: 5
-            //++     for (direction_index, cases_per_dir) in v.iter().enumerate() {
-
-            //++         let mut base_position = [0.0, 0.0, 0.0];
-            //++         println!("{:?} :: {:?}", direction_index, cases_per_dir);
-
-            //++         // Vector of rendering cubes.
-            //++         let rotations = create_rotations(*cases_per_dir, &neighbor.connection_data);
-
-            //++         const base_increment: [[f32; 3]; 6]
-            //++             = [[ 5.0,  0.0,  0.0],
-            //++                [-5.0,  0.0,  0.0],
-            //++                [ 0.0,  5.0,  0.0],
-            //++                [ 0.0, -5.0,  0.0],
-            //++                [ 0.0,  0.0,  5.0],
-            //++                [ 0.0,  0.0, -5.0]];
-
-
-            //++          base_position[0] += base_increment[direction_index][0];
-            //++          base_position[1] += base_increment[direction_index][1];
-            //++          base_position[2] += base_increment[direction_index][2];
-            //++          
-            //++          for sub_case in rotations.iter() {
-            //++              for x in sub_case.iter() {
-            //++                  self.temp_aabbs.push(
-            //++                      AABB {
-            //++                          min: [x[0] + base_position[0],       x[1]       + base_position[1] , x[2] + base_position[2], color_red],
-            //++                          max: [x[0] + base_position[0] + 1.0, x[1] + 1.0 + base_position[1] , x[2] + base_position[2] - 1.0, color_red],
-            //++                      });
-            //++              }
-            //++              base_position[0] += base_increment[direction_index][0];
-            //++              base_position[1] += base_increment[direction_index][1];
-            //++              base_position[2] += base_increment[direction_index][2];
-            //++          }
-            //++     }
-
-
-            //++     //++     for c in 0..*cases_per_dir {
-            //++     //++         let rotations = create_rotations(c, &neighbor.connection_data);
-
-            //++     //++         // x+
-            //++     //++         if direction_index == 0 {
-
-            //++     //++             for rotation in rotations.iter() {
-            //++     //++                 base_position[0] += 5.0;
-            //++     //++                 for x in rotation.iter() {
-            //++     //++                     self.temp_aabbs.push(
-            //++     //++                         AABB {
-            //++     //++                             min: [x[0] + base_position[0],       x[1]       + base_position[1] , x[2] + base_position[2], color_red],
-            //++     //++                             max: [x[0] + base_position[0] + 1.0, x[1] + 1.0 + base_position[1] , x[2] + base_position[2] - 1.0, color_red],
-            //++     //++                         });
-            //++     //++                 }
-            //++     //++             }
-            //++     //++         }
-            //++     //++         // // x-
-            //++     //++         // if direction_index == 1 {
-            //++     //++         //     base_position[0] -= 5.0;
-            //++     //++         // }
-            //++     //++         // // y+
-            //++     //++         // if direction_index == 0 {
-            //++     //++         //     base_position[1] += 5.0;
-            //++     //++         // }
-            //++     //++         // // y-
-            //++     //++         // if direction_index == 1 {
-            //++     //++         //     base_position[1] -= 5.0;
-            //++     //++         // }
-            //++     //++         // // z+
-            //++     //++         // if direction_index == 0 {
-            //++     //++         //     base_position[2] += 5.0;
-            //++     //++         // }
-            //++     //++         // // z-
-            //++     //++         // if direction_index == 1 {
-            //++     //++         //     base_position[2] -= 5.0;
-            //++     //++         // }
-
-            //++     //++     }
-
-
-            //++     //++ }
-            //++     // let rotated_voxel_data = neighbor.get_rotated_connection_data(
-            //++     // for (index, rot) in v.enumerate() {
-            //++     //     let rotations = create_rotations(rot);
-            //++     // }
-            //++ }
-            // let rotations_x_plus_dir = create_rotations(connections[0], &test);
-
-            // for x in test.iter() {
-            //     self.temp_aabbs.push(
-            //         AABB {
-            //             min: [x[0] + base_position[0],       x[1]       + base_position[1] , x[2] + base_position[2], color],
-            //             max: [x[0] + base_position[0] + 1.0, x[1] + 1.0 + base_position[1] , x[2] + base_position[2] - 1.0, color],
-            //         });
-            // }
-            // base_position[0] += 5.0;
-
-            // // Check the x- direction.
-
-            // // for rotation in all_rotations.iter() {
-            // for rotation in rotations_x_plus_dir.iter() {
-            //     for x in rotation.iter() {  
-            //         self.temp_aabbs.push(
-            //             AABB {
-            //                 min: [x[0] + base_position[0],       x[1]       + base_position[1] , x[2] + base_position[2], color_red],
-            //                 max: [x[0] + base_position[0] + 1.0, x[1] + 1.0 + base_position[1] , x[2] + base_position[2] - 1.0, color_red],
-            //             });
-            //     }
-            //     base_position[0] += 5.0;
-            // }
-            // let mut base_position = [-5.0, 0.0, 0.0];
-
-            // let rotations_x_minus_dir = create_rotations(connections[1], &test);
-            // for rotation in rotations_x_minus_dir.iter() {
-            //     for x in rotation.iter() {  
-            //         self.temp_aabbs.push(
-            //             AABB {
-            //                 min: [x[0] + base_position[0],       x[1]       + base_position[1] , x[2] + base_position[2], color_red],
-            //                 max: [x[0] + base_position[0] + 1.0, x[1] + 1.0 + base_position[1] , x[2] + base_position[2] - 1.0, color_red],
-            //             });
-            //     }
-            //     base_position[0] -= 5.0;
-            // }
-            // let mut base_position = [0.0, 5.0, 0.0];
-
-            // let rotations_y_plus_dir = create_rotations(connections[2], &test);
-            // for rotation in rotations_y_plus_dir.iter() {
-            //     for x in rotation.iter() {
-            //         self.temp_aabbs.push(
-            //             AABB {
-            //                 min: [x[0] + base_position[0],       x[1]       + base_position[1] , x[2] + base_position[2], color_red],
-            //                 max: [x[0] + base_position[0] + 1.0, x[1] + 1.0 + base_position[1] , x[2] + base_position[2] - 1.0, color_red],
-            //             });
-            //     }
-            //     base_position[1] += 5.0;
-            // }
-
-            // let mut base_position = [0.0, -5.0, 0.0];
-
-            // let rotations_y_minus_dir = create_rotations(connections[3], &test);
-            // for rotation in rotations_y_minus_dir.iter() {
-            //     for x in rotation.iter() {
-            //         self.temp_aabbs.push(
-            //             AABB {
-            //                 min: [x[0] + base_position[0],       x[1]       + base_position[1] , x[2] + base_position[2], color_red],
-            //                 max: [x[0] + base_position[0] + 1.0, x[1] + 1.0 + base_position[1] , x[2] + base_position[2] - 1.0, color_red],
-            //             });
-            //     }
-            //     base_position[1] -= 5.0;
-            // }
-
-            // let mut base_position = [0.0, 0.0, 5.0];
-
-            // let rotations_z_plus_dir = create_rotations(connections[4], &test);
-            // for rotation in rotations_z_plus_dir.iter() {
-            //     for x in rotation.iter() {
-            //         self.temp_aabbs.push(
-            //             AABB {
-            //                 min: [x[0] + base_position[0],       x[1]       + base_position[1] , x[2] + base_position[2], color_red],
-            //                 max: [x[0] + base_position[0] + 1.0, x[1] + 1.0 + base_position[1] , x[2] + base_position[2] - 1.0, color_red],
-            //             });
-            //     }
-            //     base_position[2] += 5.0;
-            // }
-
-            // let mut base_position = [0.0, 0.0, -5.0];
-
-            // let rotations_z_minus_dir = create_rotations(connections[5], &test);
-            // for rotation in rotations_z_minus_dir.iter() {
-            //     for x in rotation.iter() {
-            //         self.temp_aabbs.push(
-            //             AABB {
-            //                 min: [x[0] + base_position[0],       x[1]       + base_position[1] , x[2] + base_position[2], color_red],
-            //                 max: [x[0] + base_position[0] + 1.0, x[1] + 1.0 + base_position[1] , x[2] + base_position[2] - 1.0, color_red],
-            //             });
-            //     }
-            //     base_position[2] += -5.0;
-            // }
+            self.gpu_debugger.add_aabbs(&context.device, &context.queue, &self.temp_aabbs);
+            self.temp_aabbs.clear();
+                // self.some_counter += 1;
+            }
 
             self.gpu_debugger.add_aabbs(&context.device, &context.queue, &self.temp_aabbs);
             self.gpu_debugger.add_arrows(&context.device, &context.queue, &self.temp_arrows);
+
+            self.temp_arrows.clear();
+            self.temp_aabbs.clear();
+
         }
 
         self.once = false;
 
+        // if self.some_counter < 6000 {
+
+        //     let candidates = self.wfc_engine.find_next_known_candidates().unwrap();
+        //     // println!("CANDIDATES : {:?}", candidates);
+
+        //     let mut rng = rand::thread_rng();
+        //     let r: u32 = rng.gen_range(0..candidates.len()).try_into().unwrap();
+
+        //     let next_candidate = candidates[r as usize];
+        //     // println!("The next candidate is {:?}", next_candidate);
+        //     self.wfc_engine.make_known(next_candidate);
+        //     self.wfc_engine.expand_band(next_candidate);
+
+        //     self.temp_aabbs.append(&mut self.wfc_engine.get_aabb_data());
+        //     self.gpu_debugger.add_aabbs(&context.device, &context.queue, &self.temp_aabbs);
+        //     self.temp_aabbs.clear();
+        // }
         self.some_counter += 1;
     }
 

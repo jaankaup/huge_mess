@@ -1,3 +1,4 @@
+use rand::Rng;
 use std::cmp::Reverse;
 use std::collections::BinaryHeap;
 use std::collections::HashMap;
@@ -21,7 +22,8 @@ pub struct WfcScene {
     dim_y: u32,
     dim_z: u32,
     scene_data: Vec<WfcNode>,   
-    band: BinaryHeap<Reverse<WfcNode>>,
+    // band: BinaryHeap<Reverse<(u32, u32)>>,
+    band: Vec<(u32, u32)>,
     all_block_cases: Vec<WfcBlock>,
     temp_aabbs: Vec<AABB>,
 }
@@ -33,7 +35,8 @@ impl WfcScene {
             dim_y: dim_y,
             dim_z: dim_z,
             scene_data: vec![WfcNode::Far; (dim_x * dim_y * dim_x).try_into().unwrap()],   
-            band: BinaryHeap::new(),
+            band: Vec::<(u32, u32)>::with_capacity(1000),
+            // band: BinaryHeap::new(),
             all_block_cases: Vec::new(),
             temp_aabbs: Vec::new(),
         }
@@ -63,7 +66,12 @@ impl WfcScene {
         self.debug_aabb(block_id, coord, &conn_data.clone());
     }
 
-    pub fn find_neighbor_indices(&mut self, coord: [u32 ; 3]) -> [Option<u32>; 6] {
+    pub fn find_neighbor_indices_ind(&mut self, index: u32) -> [Option<u32>; 6] {
+        // VALIDATION!
+        self.find_neighbor_indices_coord(index_to_uvec3(index, self.dim_x, self.dim_y))
+    }
+
+    pub fn find_neighbor_indices_coord(&mut self, coord: [u32 ; 3]) -> [Option<u32>; 6] {
 
         let ref_to_node = &self.scene_data[uvec3_to_index(coord[0], coord[1], coord[2], self.dim_x, self.dim_y) as usize];
         // assert!(ref_to_node);
@@ -97,58 +105,184 @@ impl WfcScene {
         self.expand_band(center_index);
     }
 
+    pub fn update_band_node(&mut self, ind: u32) {
+
+        // VALIDATION!
+        let neighbor_indices = self.find_neighbor_indices_ind(ind);
+        // println!("neighbor_indices : {:?}", neighbor_indices);
+        // let mut possible_cases = Vec::<u32>::new();
+
+        // Store case number as key, and the key count as value.
+        let mut possible_matches = HashMap::<u32, u32>::new();
+        let mut known_neighbor_count = 0;
+
+        for (direction_index, ni) in neighbor_indices.iter().enumerate() {
+            // Kauppinen
+            if ni.is_some() {
+                let scene_data_ref = &mut self.scene_data[ni.unwrap() as usize];
+                match *scene_data_ref {
+                    WfcNode::Known(block_id) => {
+
+                        known_neighbor_count += 1;
+                        for x in self.all_block_cases.iter() {
+                            // println!("all_block_cases : {:?}", self.all_block_cases.len());
+                            // Check for all possible cases and this known match. 
+                            if x.matches(&self.all_block_cases[block_id as usize], direction_index + 1) {
+                                possible_matches.entry(x.get_id()).and_modify(|b_count| *b_count += 1).or_insert(1);
+                            }
+                        }
+                        // self.all_block_cases[block_id].
+                        //known_neighbor_refs.push(scene_data_ref);
+                    }
+                    _ => {}
+                }
+            }
+        }
+        // Get the intersection of the all possible cases.
+        // println!("Possible matches:");
+        // println!("{:?}", possible_matches);
+        let the_vec_of_cases: Vec<u32> =
+             possible_matches
+             .iter()
+             .filter(|(k,v)| **v == known_neighbor_count)
+             .map(|(k,_)| *k)
+             .collect::<Vec<_>>(); 
+        
+        // println!("Actual possible matches: {:?}", the_vec_of_cases);
+        // Does this alredy exists of band..
+        if let Some(pos) = self.band.iter().position(|(_, id)| *id == ind) {
+            self.band[pos as usize] = (the_vec_of_cases.len().try_into().unwrap(), ind);    
+        }
+        // Add a new band node.
+        else {
+            self.band.push((the_vec_of_cases.len().try_into().unwrap(), ind));
+        }
+        self.scene_data[ind as usize] = WfcNode::Band(the_vec_of_cases); 
+    }
+
+    /// Expand band set from given center index.
     pub fn expand_band(&mut self, center_index: u32) {
         let coordinate = index_to_uvec3(center_index, self.dim_x, self.dim_y);   
-        let neighbor_indices = self.find_neighbor_indices(coordinate);
+        let neighbor_indices = self.find_neighbor_indices_coord(coordinate);
         for ind in neighbor_indices.iter() {
             if ind.is_some() {
+            //println!("Find neigbors :: {:?}", ind.unwrap());
                 let neighbor_ref = &mut self.scene_data[ind.unwrap() as usize];
                 match *neighbor_ref {
                     WfcNode::Known(_) => {},
-                    WfcNode::Band(_) => {},
+                    WfcNode::Band(_) => {
+                        // println!("Found band :: {:?}", ind.unwrap());
+                        // Update case count.
+                        self.update_band_node(ind.unwrap());
+                    },
                     WfcNode::Far => {
-                        *neighbor_ref = WfcNode::Band(Vec::new());
 
-                            // Debugging.
-                            let n_coordinate = index_to_uvec3(ind.unwrap(), self.dim_x, self.dim_y);
-                            let base_position = [n_coordinate[0] as f32 * 5.0, n_coordinate[1] as f32 * 5.0, n_coordinate[2] as f32 * 5.0];
-                            let color: f32 = unsafe {transmute::<u32, f32>(0x0000FFFF)};
-                            self.temp_aabbs.push(
-                                AABB {
-                                    min: [base_position[0],
-                                          base_position[1],
-                                          base_position[2],
-                                          color],
-                                    max: [base_position[0] + 1.0,
-                                          base_position[1] + 1.0,
-                                          base_position[2] + 1.0,
-                                          color],
-                                });
+                        *neighbor_ref = WfcNode::Band(Vec::new());
+                        // println!("Found far :: {:?}", ind.unwrap());
+                        self.update_band_node(ind.unwrap());
+
+                        // Update case count.
+
+                        // Debugging.
+                        //+0 let n_coordinate = index_to_uvec3(ind.unwrap(), self.dim_x, self.dim_y);
+                        //+0 let base_position = [n_coordinate[0] as f32 * 5.0, n_coordinate[1] as f32 * 5.0, n_coordinate[2] as f32 * 5.0];
+                        //+0 let color: f32 = unsafe {transmute::<u32, f32>(0x0000FFFF)};
+                        //+0 self.temp_aabbs.push(
+                        //+0     AABB {
+                        //+0         min: [base_position[0],
+                        //+0               base_position[1],
+                        //+0               base_position[2],
+                        //+0               color],
+                        //+0         max: [base_position[0] + 1.0,
+                        //+0               base_position[1] + 1.0,
+                        //+0               base_position[2] + 1.0,
+                        //+0               color],
+                        //+0     });
 
                     },
                 }
             }
         }
+        // self.band.sort();
+        // println!("Sorted band {:?}", self.band);
+    }
+
+    pub fn make_known(&mut self, index: u32) {
+        // Validation
+        // println!("BAND :: {:?}", self.band);
+        let node_ref = &mut self.scene_data[index as usize];
+        let mut r: Option<u32> = None;
+        let new_node_block_id = match node_ref {
+            WfcNode::Band(candidates) => {
+                let mut rng = rand::thread_rng();
+                r = Some(rng.gen_range(0..candidates.len()).try_into().unwrap());
+                // println!("candidates.len() = {:?}", candidates.len());
+                //let r: u32 = rng.gen_range(0..candidates.len()).try_into().unwrap();
+                candidates[r.unwrap() as usize]
+            },
+            _ => { panic!("Not a band node.") }
+        };
+        // Add new known.
+        self.scene_data[index as usize] = WfcNode::Known(new_node_block_id);
+        // Kauppinen
+        self.debug_aabb(new_node_block_id, index_to_uvec3(index, self.dim_x, self.dim_y), &self.all_block_cases[new_node_block_id as usize].get_connection_data().clone());
+        // Delete from the band.
+        
+        // println!("self.band == {:?}", self.band);
+        // println!("r == {:?}", r);
+        // if r.is_some() {
+            let delete_index = self.band.iter().position(|x| x.1 == index).unwrap(); 
+            self.band.remove(delete_index.try_into().unwrap());
+            // self.band.remove(index.try_into().unwrap());
+        // }
+
+    }
+
+    pub fn find_next_known_candidates(&mut self) -> Option<Vec<u32>> {
+
+        if self.band.len() == 0 { return None; }
+
+        let mut result = Vec::new();
+        self.band.sort();
+        let mut smallest_case_count = 0;
+        for v in self.band.iter() {
+            if v.0 == 0 { continue; }
+            // This is the smallest case number that matters.
+            // Add to result and update the smalles_case_count.
+            else if smallest_case_count == 0 && v.0 > 0 {
+                smallest_case_count = v.0;
+                result.push(v.1); 
+            }
+            // This is the smallest case number that matters.
+            else if smallest_case_count == v.0 {
+                result.push(v.1); 
+            }
+            // The smallest cases all already picked up.
+            else if smallest_case_count < v.0 {
+                break;
+            }
+        }
+        Some(result)
     }
     
     pub fn debug_aabb(&mut self, block_id: u32, coord: [u32 ; 3], conn_data: &Vec<[f32; 3]>) {
 
         // For debugging reasons.
         let block_size = self.all_block_cases[block_id as usize].get_dimension();
-        let base_position = [coord[0] as f32 * block_size as f32,
-                             coord[1] as f32 * block_size as f32,
-                             coord[2] as f32 * block_size as f32];
-        let color: f32 = unsafe {transmute::<u32, f32>(0xFFFF00FF)};
+        let base_position = [coord[0] as f32 * 0.8 * block_size as f32,
+                             coord[1] as f32 * 0.8 * block_size as f32,
+                             coord[2] as f32 * 0.8 * block_size as f32];
+        let color: f32 = unsafe {transmute::<u32, f32>(0x0F00FFFF)};
         for x in conn_data.iter() {
             self.temp_aabbs.push(
                 AABB {
-                    min: [base_position[0] + x[0] as f32,
-                          base_position[1] + x[1] as f32,
-                          base_position[2] + x[2] as f32,
+                    min: [(base_position[0] + x[0] as f32) * 0.8,
+                          (base_position[1] + x[1] as f32) * 0.8,
+                          (base_position[2] + x[2] as f32) * 0.8,
                           color],
-                    max: [base_position[0] + x[0] as f32 + 1.0, // TODO: not 1.0, a parameter
-                          base_position[1] + x[1] as f32 + 1.0, // TODO: not 1.0, a parameter
-                          base_position[2] + x[2] as f32 + 1.0, // TODO: not 1.0, a parameter
+                    max: [(base_position[0] + x[0] as f32 + 1.0) * 0.8, // TODO: not 1.0, a parameter
+                          (base_position[1] + x[1] as f32 + 1.0) * 0.8, // TODO: not 1.0, a parameter
+                          (base_position[2] + x[2] as f32 + 1.0) * 0.8, // TODO: not 1.0, a parameter
                           color],
                 });
         }
@@ -171,15 +305,16 @@ pub fn test_data(color: u32) -> Vec<[f32 ; 4]> {
             result.push([2.0, j as f32, k as f32, the_color]);
         }
     }
-    result.push([0.0, 0.0, 0.0, the_color]);
-    result.push([1.0, 0.0, 0.0, the_color]);
-    result.push([2.0, 0.0, 0.0, the_color]);
+    // result.push([0.0, 0.0, 0.0, the_color]);
+    // result.push([1.0, 0.0, 0.0, the_color]);
+    // result.push([2.0, 0.0, 0.0, the_color]);
     result 
 }
 
 pub fn test_data_v3() -> Vec<[f32 ; 3]> {
 
     let mut result = Vec::new();
+
 
     for i in -2..2 {
         for k in -2..3 {
@@ -191,10 +326,177 @@ pub fn test_data_v3() -> Vec<[f32 ; 3]> {
             result.push([2.0, j as f32, k as f32]);
         }
     }
-    result.push([0.0, 0.0, 0.0]);
-    result.push([1.0, 0.0, 0.0]);
-    result.push([2.0, 0.0, 0.0]);
+    // result.push([0.0, 0.0, 0.0]);
+    // result.push([1.0, 0.0, 0.0]);
+    // result.push([2.0, 0.0, 0.0]);
     result 
+}
+
+pub fn test_data_floor() -> Vec<[f32 ; 3]> {
+    
+    let mut result = Vec::new();
+
+    for i in -2..3 {
+
+        for k in -2..3 {
+            result.push([i as f32, -2.0, k as f32]);
+        }
+    }
+    result
+}
+
+pub fn test_data_floor_corner() -> Vec<[f32 ; 3]> {
+    
+    let mut result = Vec::new();
+
+    for i in -2..3 {
+
+        for k in -2..3 {
+            result.push([i as f32, -2.0, k as f32]);
+        }
+    }
+
+    for j in -1..3 {
+        result.push([2.0, j as f32, -2.0]);
+    }
+    result
+}
+
+pub fn test_data_floor_corner_2() -> Vec<[f32 ; 3]> {
+    
+    let mut result = Vec::new();
+
+    for i in -2..3 {
+
+        for k in -2..3 {
+            result.push([i as f32, -2.0, k as f32]);
+        }
+    }
+
+    for j in -1..3 {
+        result.push([2.0, j as f32, -2.0]);
+    }
+    for j in -1..3 {
+        result.push([-2.0, j as f32, -2.0]);
+    }
+    result
+}
+
+pub fn test_data_floor_corner_3() -> Vec<[f32 ; 3]> {
+    
+    let mut result = Vec::new();
+
+    for i in -2..3 {
+
+        for k in -2..3 {
+            result.push([i as f32, -2.0, k as f32]);
+        }
+    }
+
+    for j in -1..3 {
+        result.push([2.0, j as f32, -2.0]);
+    }
+    for j in -1..3 {
+        result.push([-2.0, j as f32, -2.0]);
+    }
+    for j in -1..3 {
+        result.push([-2.0, j as f32, 2.0]);
+    }
+    result
+}
+
+pub fn test_data_ceiling() -> Vec<[f32 ; 3]> {
+    
+    let mut result = Vec::new();
+
+    for j in -2..3 {
+        for k in -2..3 {
+            result.push([2.0, j as f32, k as f32]);
+        }
+    }
+    result
+}
+
+pub fn corner() -> Vec<[f32 ; 3]> {
+    
+    let mut result = Vec::new();
+
+    for j in -2..3 {
+        result.push([2.0, j as f32, -2.0]);
+    }
+    result
+}
+
+pub fn corner2() -> Vec<[f32 ; 3]> {
+    
+    let mut result = Vec::new();
+
+    for j in -2..3 {
+        result.push([2.0, j as f32, -2.0]);
+    }
+    for j in -2..3 {
+        result.push([-2.0, j as f32, -2.0]);
+    }
+    result
+}
+
+pub fn test_data_ceiling_corner() -> Vec<[f32 ; 3]> {
+    
+    let mut result = Vec::new();
+
+    for j in -2..3 {
+        for k in -2..3 {
+            result.push([2.0, j as f32, k as f32]);
+        }
+    }
+    for j in -1..3 {
+        result.push([2.0, j as f32, -2.0]);
+    }
+    result
+}
+
+pub fn test_data_ceiling_corner_2() -> Vec<[f32 ; 3]> {
+    
+    let mut result = Vec::new();
+
+    for j in -2..3 {
+        for k in -2..3 {
+            result.push([2.0, j as f32, k as f32]);
+        }
+    }
+    for j in -1..3 {
+        result.push([2.0, j as f32, -2.0]);
+    }
+    for j in -1..3 {
+        result.push([2.0, j as f32, 2.0]);
+    }
+    result
+}
+
+pub fn test_data_2x_ceiling_floor() -> Vec<[f32 ; 3]> {
+    
+    let mut result = Vec::new();
+
+    for j in -2..2 {
+        for k in -2..2 {
+            result.push([2.0, j as f32, k as f32]);
+        }
+    }
+    for i in -2..2 {
+        for j in -2..2 {
+            result.push([i as f32, j as f32, -2.0]);
+        }
+    }
+    for j in -2..3 {
+        for k in -2..3 {
+            result.push([2.0, j as f32, k as f32]);
+        }
+    }
+    result
+}
+
+pub fn test_data_empty() -> Vec<[f32 ; 3]> {
+    vec![]
 }
 
 /// A basic wfc block.
@@ -272,7 +574,7 @@ impl Voxel {
         for i in 0..13 {
             result.push(create_rotations(1 << i, &self.connection_data)[0].clone());
         }
-        println!("All rotations {:?}", result);
+        // println!("All rotations {:?}", result);
         result
     }
 }
@@ -446,12 +748,12 @@ pub fn check_connections(input: &Vec<[f32; 4]>, neighbor: &Vec<[f32;4]>, neighbo
     z_plus.sort();
     z_minus.sort();
 
-    println!("x_plus == {:?}", x_plus);
-    println!("x_minus == {:?}", x_minus);
-    println!("u_plus == {:?}", y_plus);
-    println!("y_minus == {:?}", y_minus);
-    println!("z_plus == {:?}", z_plus);
-    println!("z_minus == {:?}", z_minus);
+    // println!("x_plus == {:?}", x_plus);
+    // println!("x_minus == {:?}", x_minus);
+    // println!("u_plus == {:?}", y_plus);
+    // println!("y_minus == {:?}", y_minus);
+    // println!("z_plus == {:?}", z_plus);
+    // println!("z_minus == {:?}", z_minus);
 
     let all_neighbor_rotations = create_rotations(neighbor_rotations, neighbor);
 
@@ -838,6 +1140,7 @@ impl WfcBlock {
         z_minus.sort();
         identity.sort();
 
+        // Precalculate inverted match data for each direction.
         let mut x_minus_inverted = connection_data.iter().filter(|x| x[0] == -2.0).map(|x| [-1 * x[0] as i32, x[1] as i32, x[2] as i32]).collect::<Vec<_>>(); 
         let mut x_plus_inverted  = connection_data.iter().filter(|x| x[0] == 2.0).map(|x| [-1 * x[0] as i32, x[1] as i32, x[2] as i32]).collect::<Vec<_>>(); 
         let mut y_minus_inverted = connection_data.iter().filter(|x| x[1] == -2.0).map(|x| [x[0] as i32, -1 * x[1] as i32, x[2] as i32]).collect::<Vec<_>>(); 
@@ -908,8 +1211,8 @@ impl WfcBlock {
     pub fn matches(&self, other: &WfcBlock, direction: usize) -> bool {
         assert!(direction < 7);
         
-        // Compare the inverted axis to this axis data.
-        *other.get_match_data(direction) == self.match_data[direction]
+        // VALIDATION!!!!!!!!!!!!!!
+        *other.get_inverted_match(direction) == self.match_data[direction]
     }
 
     pub fn create_rotation(&self, rule: u32, id: u32) -> WfcBlock {

@@ -330,13 +330,13 @@ impl PrimitiveProcessor {
             (offset * std::mem::size_of::<AABB>() as u32).into());
     }
 
-    pub fn append_aabbs(&self, device: &wgpu::Device, queue: &wgpu::Queue, aabb: &Vec<AABB>) {
+    pub fn append_aabbs(&self, device: &wgpu::Device, queue: &wgpu::Queue, aabb: &Vec<AABB>, offset: u32) {
         add_data::<AABB>(
             device,
             queue,
             &aabb,
             &self.aabb_buffer,
-            0);
+            (offset * std::mem::size_of::<AABB>() as u32).into());
     }
     pub fn insert_arrow(&self, device: &wgpu::Device, queue: &wgpu::Queue, arrow: &Arrow, offset: u32) {
         add_data::<Arrow>(

@@ -92,7 +92,7 @@ impl GpuDebugger {
         let render_param_buffer = RenderParamBuffer::create(device, 1.0);
         let light = LightBuffer::create(
             device,
-            [5.0, 5.0, 5.0], // pos
+            [25.0, 25.0, 25.0], // pos
             [25, 25, 130],  // spec
             [255,200,255], // light
             155.0,
@@ -135,9 +135,10 @@ impl GpuDebugger {
 
     pub fn add_aabbs(&self, device: &wgpu::Device, queue: &wgpu::Queue, aabb: &Vec<AABB>) {
         let mut histogram_values = self.histogram_element_counter.get_values(device, queue);
+        let count_now = histogram_values[2];
         histogram_values[2] += aabb.len() as u32;
         self.histogram_element_counter.set_values_cpu_version(device, queue, &histogram_values);
-        self.primitive_processor.append_aabbs(device, queue, aabb);
+        self.primitive_processor.append_aabbs(device, queue, aabb, count_now);
     }
 
     pub fn add_arrow(&self, device: &wgpu::Device, queue: &wgpu::Queue, arrow: &Arrow) {
