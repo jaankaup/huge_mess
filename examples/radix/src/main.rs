@@ -1,3 +1,5 @@
+use std::marker::PhantomData;
+use std::mem::size_of;
 use engine::misc::index_to_uvec3;
 use engine::misc::uvec3_to_index;
 use rand::prelude::*;
@@ -46,9 +48,66 @@ struct RadixApp {
     gpu_debugger: GpuDebugger,
     some_counter: u32,
     once: bool,
-    // band: BinaryHeap<Reverse<BandCell>>,
     temp_aabbs: Vec<AABB>,
     temp_arrows: Vec<Arrow>,
+}
+
+#[derive(Debug)]
+pub struct RadixRequirements {
+    input_and_auxiliary_memory: u32,
+    bucket_histograms: u32,
+    block_histograms: u32,
+    block_assignments: u32,
+    local_sort_bucket_assigments: u32,
+}
+
+impl RadixRequirements {
+
+    /// Calculate radix sort memory requirements in bytes.
+    /// n = number of keys
+    /// k = number of bits per key
+    /// r = radix
+    /// kpb = keys per block
+    /// lst = local sort threshold
+    pub fn init(n: u32, k: u32, r: u32, kpb: u32, lst: u32, merge_threshold: u32) -> Self {
+        Self {
+            input_and_auxiliary_memory: 2 * n * k / 8,
+            bucket_histograms: 4 * r * n / merge_threshold,
+            block_histograms:  4 * r * n / kpb + n / merge_threshold,
+            block_assignments: 2 * 16 * (n / kpb + n / merge_threshold),
+            local_sort_bucket_assigments: 12 * (2 * n / lst + n/merge_threshold).min(r * n/merge_threshold), 
+        }
+    }
+}
+
+// TODO: typeparameter
+pub struct RadixParams<T> {
+    keys_per_block: u32,
+    keys_per_thread: u32,
+    number_of_radix_bits: u32,
+    number_of_key_bits: u32,
+    local_sort_threshold: u32,
+    bucket_merge_threshold: u32,
+    k_type: PhantomData<T>,
+}
+
+impl<T> RadixParams<T> {
+    pub fn init(kpb: u32, kpt: u32, local_sort_threshold: u32, merge_threshold: u32) -> Self {
+        assert!(kpb > 0);
+        assert!(kpt > 0);
+        assert!(local_sort_threshold > 0);
+        assert!(merge_threshold > 0);
+
+        Self {
+            keys_per_block: kpb,
+            keys_per_thread: kpt,
+            number_of_radix_bits: 8,
+            number_of_key_bits: (size_of::<T>() * 8).try_into().unwrap(),
+            local_sort_threshold: local_sort_threshold,
+            bucket_merge_threshold: merge_threshold,
+            k_type: PhantomData,
+        }
+    }
 }
 
 impl RadixApp {
@@ -173,12 +232,15 @@ impl Application for RadixApp {
             self.temp_arrows.clear();
             self.temp_aabbs.clear();
 
-        }
+        let req = RadixRequirements::init(100000, 32, 256, 6912, 9216, 3000);
+        println!("req == {:?}", req);
+
 
         self.once = false;
 
         self.some_counter += 1;
     }
+}
 
     fn close(&mut self, _wgpu_context: &WGPUContext){ 
     }
