@@ -35,3 +35,7 @@ path = "wfc_test/src/main.rs"
 [[example]]
 name = "wfc_part2"
 path = "wfc_part2/src/main.rs"
+
+[[example]]
+name = "radix"
+path = "radix/src/main.rs"
