@@ -1,3 +1,4 @@
+use engine::prefix_sum::{PrefixSum};
 use crate::wfc_misc::corner2;
 use crate::wfc_misc::corner;
 use crate::wfc_misc::test_data_ceiling_corner_2;

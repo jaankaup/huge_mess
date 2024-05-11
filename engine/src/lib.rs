@@ -21,3 +21,4 @@ pub mod common_structs;
 pub mod algorithms;
 pub mod gpu_debugger;
 pub mod wfc_test;
+pub mod prefix_sum;

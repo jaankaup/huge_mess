@@ -81,6 +81,7 @@ impl RadixRequirements {
 }
 
 // TODO: typeparameter
+#[derive(Debug)]
 pub struct RadixParams<T> {
     keys_per_block: u32,
     keys_per_thread: u32,
@@ -233,7 +234,9 @@ impl Application for RadixApp {
             self.temp_aabbs.clear();
 
         let req = RadixRequirements::init(100000, 32, 256, 6912, 9216, 3000);
+        let radix_params = RadixParams::<u32>::init(6912, 16, 9216, 3000);
         println!("req == {:?}", req);
+        println!("radix params == {:?}", radix_params);
 
 
         self.once = false;
