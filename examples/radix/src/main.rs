@@ -2,6 +2,7 @@ use std::marker::PhantomData;
 use std::mem::size_of;
 use engine::misc::index_to_uvec3;
 use engine::misc::uvec3_to_index;
+use engine::subgroup_test::WarpTest;
 use rand::prelude::*;
 use std::collections::HashMap;
 use std::collections::HashSet;
@@ -122,6 +123,8 @@ impl Application for RadixApp {
         log::info!("Initializing RadixApp");
 
         log::info!("Creating camera.");
+
+        let warp_test = WarpTest::init(&context.device);
 
         // Create camera.
         let mut camera = Camera::new(surface.config().width as f32,

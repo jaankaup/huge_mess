@@ -33,7 +33,31 @@ pub struct FmmPrefixParams {
     pub exclusive_parts_end_index: u32,
 }
 
-/// A struct representing the resources of prefix sum.
+// Plan:
+// Prerequisities:
+//     temp:array: size (as big (u32) as the input data length) + length of auxiliar sum.
+//
+
+// Prefix sum params.
+//++ let fmm_prefix_params = buffer_from_data::<FmmPrefixParams>(
+//++     &device,
+//++     &vec![FmmPrefixParams {
+//++         data_start_index: 0,
+//++         data_end_index: (number_of_fmm_cells - 1) as u32,
+//++             exclusive_parts_start_index: number_of_fmm_cells as u32, exclusive_parts_end_index: number_of_fmm_cells as u32 + 2048,
+//++     }],
+//++     wgpu::BufferUsages::COPY_SRC | wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+//++     None
+//++                                                                                                                                                                                               );
+pub fn get_scan_block_size(thread_count: u32) -> u32 {
+    thread_count 
+
+}
+/// A struct for prefix sum operations and resources.
+/// 
+/// Usage: 
+/// 
+/// 
 pub struct PrefixSum {
     /// The pipeline wrapper for prefix sum.
     prefix_sum_wrapper: ComputePipelineWrapper,
@@ -50,7 +74,47 @@ impl PrefixSum {
     /// prefix_sum buffer is a temporary buffer for intermediate results of prefix_sum.
     /// input_data is the data that should be processed.
     /// output_data is filtered data.
-    pub fn init(device: &wgpu::Device, prefix_sum_buffer: &wgpu::Buffer, input_data: &wgpu::Buffer, output_data: &wgpu::Buffer) -> Self {
+    pub fn init(device: &wgpu::Device,
+                prefix_sum_buffer: &wgpu::Buffer,
+                input_data: &wgpu::Buffer,
+                output_data: &wgpu::Buffer,
+                scan_block_size: u32) -> Self {
+
+        // TODO: even bigger scan_block_sizes
+        assert!(scan_block_size == 64 || 
+                scan_block_size == 128 || 
+                scan_block_size == 192 || 
+                scan_block_size == 256 || 
+                scan_block_size == 320 || 
+                scan_block_size == 384 || 
+                scan_block_size == 448 || 
+                scan_block_size == 512 || 
+                scan_block_size == 576 || 
+                scan_block_size == 640 || 
+                scan_block_size == 704 || 
+                scan_block_size == 768 || 
+                scan_block_size == 768 || 
+                scan_block_size == 832 || 
+                scan_block_size == 896 || 
+                scan_block_size == 960 || 
+                scan_block_size == 1024); 
+
+// 64 :: 136
+// 128 :: 272
+// 192 :: 408
+// 256 :: 544
+// 320 :: 680
+// 384 :: 816
+// 448 :: 952
+// 512 :: 1088
+// 576 :: 1224
+// 640 :: 1360
+// 704 :: 1496
+// 768 :: 1632
+// 832 :: 1768
+// 896 :: 1904
+// 960 :: 2040
+// 1024 :: 2176
 
 
         // Create prefix sum module.
@@ -134,5 +198,9 @@ impl PrefixSum {
             prefix_param_buffer: param_buffer,
             number_of_filtered_objects: 0,
         }
+    }
+
+    pub fn filter(device: &wgpu::Device) {
+        
     }
 }

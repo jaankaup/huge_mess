@@ -39,6 +39,12 @@ struct FmmBlock {
     band_points_count: u32,
 };
 
+{{ INPUT_STRUCT }}
+//++ struct INPUT_DATA {
+//++     BLAAH: U32,
+//++     BLYYH: uvec<f32>,
+//++ };
+
 @group(0)
 @binding(0)
 var<uniform> fmm_prefix_params: PrefixParams;
@@ -58,8 +64,11 @@ var<storage,read_write> filtered_blocks: array<FmmBlock>;
 // let THREAD_COUNT = 64u;
 // let SCAN_BLOCK_SIZE = 136; 
 
-let THREAD_COUNT = 1024u;
-let SCAN_BLOCK_SIZE = 2176u; 
+// let THREAD_COUNT = 1024u;
+// let SCAN_BLOCK_SIZE = 2176u; 
+
+let THREAD_COUNT = {{THREAD_COUNT}};
+let SCAN_BLOCK_SIZE = {{SCAN_BLOCK_SIZE}}; 
 
 //let THREAD_COUNT = 256u;
 //let SCAN_BLOCK_SIZE = 544u; 
@@ -102,6 +111,8 @@ fn copy_block_to_shared_temp() {
 
     shared_prefix_sum[private_data.ai_bcf] = select(0u, 1u, private_data.global_ai < fmm_prefix_params.data_end_index && a.band_points_count > 0u);
     shared_prefix_sum[private_data.bi_bcf] = select(0u, 1u, private_data.global_bi < fmm_prefix_params.data_end_index && b.band_points_count > 0u);
+    //++ shared_prefix_sum[private_data.ai_bcf] = select(0u, 1u, private_data.global_ai < fmm_prefix_params.data_end_index && {{A_PREDICATE}});
+    //++ shared_prefix_sum[private_data.bi_bcf] = select(0u, 1u, private_data.global_bi < fmm_prefix_params.data_end_index && {{B_PREDICATE}});
 }
 
 fn copy_exclusive_data_to_shared_aux() {
@@ -265,18 +276,20 @@ fn gather_data() {
 
         let a = fmm_blocks[index_a];
         let a_offset = temp_prefix_sum[index_a];
-        let predicate_a = index_a < data_count && a.band_points_count > 0u;
-        if (predicate_a) { filtered_blocks[a_offset] = a; }
+        // let predicate_a = index_a < data_count && a.band_points_count > 0u;
+        // if (predicate_a) { filtered_blocks[a_offset] = a; }
+        if (index_a < data_count && {{A_PREDICATE}}) { filtered_blocks[a_offset] = a; }
 
         let b = fmm_blocks[index_b];
         let b_offset = temp_prefix_sum[index_b];
-        let predicate_b = index_b < data_count && b.band_points_count > 0u;
-        if (predicate_b) { filtered_blocks[b_offset] = b; }
+        // let predicate_b = index_b < data_count && b.band_points_count > 0u;
+        // if (predicate_b) { filtered_blocks[b_offset] = b; }
+        if (index_b < data_count && {{B_PREDICATE}}) { filtered_blocks[b_offset] = b; }
     }
 }
 
 @compute
-@workgroup_size(1024,1,1)
+@workgroup_size({{SCAN_BLOCK_SIZE}},1,1)
 fn main(@builtin(local_invocation_id)    local_id: vec3<u32>,
         @builtin(local_invocation_index) local_index: u32,
         @builtin(workgroup_id) work_group_id: vec3<u32>,
@@ -308,7 +321,7 @@ fn main(@builtin(local_invocation_id)    local_id: vec3<u32>,
     }
 
     // STAGE 2.
-    // Do the actual prefix sum and the filtered data to the final destination array.
+    // Do the actual prefix sum and add the filtered data to the final destination array.
     else if (fmm_prefix_params.stage == 2u) {
 
       if (local_index == 0u) {

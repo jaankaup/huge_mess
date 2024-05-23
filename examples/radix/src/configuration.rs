@@ -18,7 +18,8 @@ impl WGPUFeatures for RadixFeatures {
             // wgpu::Features::WRITE_TIMESTAMP_INSIDE_PASSES
             //wgpu::Features::POLYGON_MODE_LINE
 
-            wgpu::Features::empty()
+            wgpu::Features::SUBGROUP |
+            wgpu::Features::SUBGROUP_BARRIER
         }
         else {
             wgpu::Features::empty()
