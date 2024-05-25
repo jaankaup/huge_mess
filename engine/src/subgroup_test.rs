@@ -20,7 +20,8 @@ impl WarpTest {
         let module = &device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("shaders/warp_test.wgsl"),
             source: wgpu::ShaderSource::Wgsl(
-                Cow::Borrowed(include_str!("shaders/warp_test.wgsl"))),
+                // Cow::Borrowed(include_str!("shaders/warp_test.wgsl"))),
+                Cow::Borrowed(include_str!("shaders/multi_level_scan.wgsl"))),
         });
 
         let mut bind_group_mapper = BindGroupMapper::init(device);
