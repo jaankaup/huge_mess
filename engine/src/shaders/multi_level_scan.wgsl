@@ -1,28 +1,28 @@
-struct PrefixParams {
+struct ScanParams {
     data_start_index: u32,
     data_end_index: u32,
     data_size: u32,
 };
 
-struct FmmBlock {
-    index: u32,
-    band_points_count: u32,
+struct InputData {
+    test_value: f32,
 };
 
-var<workgroup> predicate_array: array<u32, 1024>;
+var<workgroup> predicate_array: array<vec4<u32>, 1024u>;
 var<workgroup> count_array: array<u32, 1024>;
 
 @group(0)
 @binding(0)
-var<uniform> fmm_prefix_params: PrefixParams;
+var<uniform> scan_params: ScanParams;
 
 @group(0)
 @binding(1)
-var<storage, read_write> input_array: array<FmmBlock>;
+var<storage, read_write> input_array: array<InputData>;
 
-// fn lane_id(id: u32, subgroup_size: u32) -> i32 {
-//     return id % subgroup_size;
-// }
+// Process stream compaction. The amount of data processed is related to the subgroup_size.
+// If subgroup_size is 32, then 2 * 32 * 32 = 2048 items is processed.
+// If subgroup_size is 64, then     64 * 64 = 4096 items is processed.
+// Low workgroup_size.x can cause problems when the data size grows.
 
 @compute
 @workgroup_size(64,1,1)
@@ -34,81 +34,50 @@ fn main(@builtin(local_invocation_id)    local_id: vec3<u32>,
         @builtin(subgroup_invocation_id) sg_id : u32) {
 
         // Avoid index out ot bound.
-        if (global_id.x >= fmm_prefix_params.data_size sg_size) {
+        if (global_id.x >= scan_params.data_size) {
 	    return;
 	}
 
-	let warp_id = global_id.x * sg_size;
+	let BLOCK_OFFSET: u32 = sg_size * sg_size;
 
-	// Process 32 x 32 items.
+	let warp_id: u32 = global_id.x / sg_size; // TODO: bit operations.
 
-	// The sum of 1-bits.
-        var one_bits;
+	// The sum of 1-bits per subgroup.
+        var one_bits: u32;
 
+	// The total sum of all bits in the whole group.
+	var group_sum = 0u;
+	var mask: vec4<u32>;
+
+	// TODO: when testing predicate, test indices. If indices is out of bounds => false.
 	for (var i=0u ; i < sg_size ; i++) {
 	    
 	    // Test the predicate. Calculate the number of 1 bits. TODO: vec4 is too big for many cases.
             // warp_id * 1024 + i * 32 + sg_id
-	    let mask = subgroupBallot(input_array[warp_id * sg_size * sg_size + i * sg_size + sg_id].band_points_count > 0); // Predicate for this.
-
-	    // Store the predicate mask.
-	    if (sg_id == 0u) {
-	        predicate_array[warp_id >> 10u
-	    }
+	    let temp_mask: vec4<u32> = subgroupBallot(input_array[warp_id * BLOCK_OFFSET + i * sg_size + sg_id].test_value < 0.5); // Predicate for this.
+	    // var temp_mask = subgroupBallot(true); // Predicate for this.
 
             // Store the sum of subgroup bitmast one bits.
 	    if (sg_id == 1u) {
-	    	one_bits = countOneBits(mask);
+	    	one_bits = countOneBits(temp_mask.x);
+	    	one_bits += countOneBits(temp_mask.y);
+                mask = temp_mask;
             }
         }
 
+	// Store all predicates at the same time.
+        predicate_array[warp_id * sg_size + sg_id] = mask; 
+
 	// Reduction for subgroup sum.
-        
-		
-
-        // // Create one bit masks subgroup-level sum of bit masks.
-        // // Store results to predicate and count array. 
-	// for(var i = 0u; i < 32u ; i++) {
-	//     mask = __ballot(input[(warp_id<<10)+(i<<5)+lnid] <= percent);
-	//     
-	//     if (lnid == 0)
-	//     pred[(warp_id<<5)+i] = mask;
-	//     
-	//     if (lnid == i)
-	//     cnt = __popc(mask);
-	// }
-
 	// Calculate the sum of all one bits.
-	if (local_id.x < 10u) {
-	    var val = input_array[local_id.x].band_points_count;
-	    for (var offset = 16u; offset > 0u; offset >>= 1u) {
-                val += subgroupShuffleDown(val, offset);
-	    }
-        }
 
-	// subgroupBallot(local_id.x < 10);
-	// subgroupBarrier();
+	// for (var offset = 16u; offset > 0u; offset >>= 1u) {
+	for (var offset = sg_size >> 1u ; offset > 0u; offset >>= 1u) {
+            group_sum += subgroupShuffleDown(group_sum, offset);
+	}
 
-        // var jep = subgroupAll(true);
-        // var jep2 = subgroupAny(true);
-
-        // subgroupAdd(1);
-	// subgroupMul(3);
-        // subgroupMax(15);
-        // subgroupMin(10);
-        // subgroupAnd(0xfu);
-        // subgroupOr(0x0f0u);
-        // subgroupXor(0xf00u);
-        // subgroupExclusiveAdd(5);
-        // subgroupExclusiveMul(7);
-        // subgroupInclusiveAdd(3);
-        // subgroupInclusiveMul(10);
-
-        // subgroupBroadcastFirst(5);
-	// subgroupBroadcast(123, 10u);
-        // subgroupShuffle(5, 5u);
-        // subgroupShuffleDown(5, 5u);
-        // subgroupShuffleUp(1, 3u);
-        // subgroupShuffleXor(1, 3u);
-	
+	// Finally store the total sum.
+	if (sg_id == 0u) {
+	    count_array[warp_id] = group_sum;
+	}
 }

@@ -1,4 +1,5 @@
-use std::marker::PhantomData;
+use bytemuck::{Pod, Zeroable};
+// use std::marker::PhantomData;
 use std::mem::size_of;
 use engine::misc::index_to_uvec3;
 use engine::misc::uvec3_to_index;
@@ -81,35 +82,19 @@ impl RadixRequirements {
     }
 }
 
-// TODO: typeparameter
-#[derive(Debug)]
-pub struct RadixParams<T> {
-    keys_per_block: u32,
-    keys_per_thread: u32,
-    number_of_radix_bits: u32,
-    number_of_key_bits: u32,
-    local_sort_threshold: u32,
-    bucket_merge_threshold: u32,
-    k_type: PhantomData<T>,
+#[repr(C)]
+#[derive(Debug, Clone, Copy, Pod, Zeroable)]
+struct ScanParams {
+    data_start_index: u32,
+    data_end_index: u32,
+    data_size: u32,
+    padding: u32,
 }
 
-impl<T> RadixParams<T> {
-    pub fn init(kpb: u32, kpt: u32, local_sort_threshold: u32, merge_threshold: u32) -> Self {
-        assert!(kpb > 0);
-        assert!(kpt > 0);
-        assert!(local_sort_threshold > 0);
-        assert!(merge_threshold > 0);
-
-        Self {
-            keys_per_block: kpb,
-            keys_per_thread: kpt,
-            number_of_radix_bits: 8,
-            number_of_key_bits: (size_of::<T>() * 8).try_into().unwrap(),
-            local_sort_threshold: local_sort_threshold,
-            bucket_merge_threshold: merge_threshold,
-            k_type: PhantomData,
-        }
-    }
+#[repr(C)]
+#[derive(Debug, Clone, Copy, Pod, Zeroable)]
+struct InputData {
+    test_data: f32,
 }
 
 impl RadixApp {
@@ -123,6 +108,8 @@ impl Application for RadixApp {
         log::info!("Initializing RadixApp");
 
         log::info!("Creating camera.");
+        println!("min_subgroup_size == {:?}", context.adapter.limits().min_subgroup_size);
+        println!("max_subgroup_size == {:?}", context.adapter.limits().max_subgroup_size);
 
         let warp_test = WarpTest::init(&context.device);
 
@@ -237,9 +224,7 @@ impl Application for RadixApp {
             self.temp_aabbs.clear();
 
         let req = RadixRequirements::init(100000, 32, 256, 6912, 9216, 3000);
-        let radix_params = RadixParams::<u32>::init(6912, 16, 9216, 3000);
         println!("req == {:?}", req);
-        println!("radix params == {:?}", radix_params);
 
 
         self.once = false;
