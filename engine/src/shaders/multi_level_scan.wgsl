@@ -33,19 +33,38 @@ fn main(@builtin(local_invocation_id)    local_id: vec3<u32>,
         @builtin(subgroup_size) sg_size : u32,
         @builtin(subgroup_invocation_id) sg_id : u32) {
 
-        if (global_id.x >= fmm_prefix_params.data_size >> 5u) {
+        // Avoid index out ot bound.
+        if (global_id.x >= fmm_prefix_params.data_size sg_size) {
 	    return;
 	}
 
-	let warp_id = global_id.x >> 5u;
+	let warp_id = global_id.x * sg_size;
 
-	for (var i=0u ; i < 32u ; i++) {
+	// Process 32 x 32 items.
+
+	// The sum of 1-bits.
+        var one_bits;
+
+	for (var i=0u ; i < sg_size ; i++) {
 	    
-	    // Test the predicate. Calculate the number of 1 bits.
-	    let mask = subgroupBallot(input_array[warp_id << 10u + i << 5u + sg_id].band_points_count > 0); // Predicate for this.
-	    let one_bits = countOneBits(mask);
+	    // Test the predicate. Calculate the number of 1 bits. TODO: vec4 is too big for many cases.
+            // warp_id * 1024 + i * 32 + sg_id
+	    let mask = subgroupBallot(input_array[warp_id * sg_size * sg_size + i * sg_size + sg_id].band_points_count > 0); // Predicate for this.
+
+	    // Store the predicate mask.
+	    if (sg_id == 0u) {
+	        predicate_array[warp_id >> 10u
+	    }
+
+            // Store the sum of subgroup bitmast one bits.
+	    if (sg_id == 1u) {
+	    	one_bits = countOneBits(mask);
+            }
         }
 
+	// Reduction for subgroup sum.
+        
+		
 
         // // Create one bit masks subgroup-level sum of bit masks.
         // // Store results to predicate and count array. 

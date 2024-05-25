@@ -125,6 +125,7 @@ impl RenderPipelineWrapper {
             multisample: multisample_state,
             fragment: if fragment_state.is_none() { None } else { fragment_state.to_owned() },
             multiview: *multiview,
+            cache: None,
         });
 
         Self {
@@ -166,6 +167,7 @@ impl ComputePipelineWrapper {
             module: &module,
             entry_point: entry_point, //"main",
             compilation_options: Default::default(),
+            cache: None,
         });
 
         Self {
