@@ -24,6 +24,11 @@ var<storage, read_write> input_array: array<InputData>;
 // If subgroup_size is 64, then     64 * 64 = 4096 items is processed.
 // Low workgroup_size.x can cause problems when the data size grows.
 
+fn udiv_up_safe32(x: u32, y: u32) -> u32 {
+    let tmp = (x + y - 1u) / y;
+    return select(tmp, 0u, y == 0u); 
+}
+ 
 @compute
 @workgroup_size(128,1,1)
 fn main(@builtin(local_invocation_id)    local_id: vec3<u32>,
@@ -33,16 +38,23 @@ fn main(@builtin(local_invocation_id)    local_id: vec3<u32>,
         @builtin(subgroup_size) sg_size : u32,
         @builtin(subgroup_invocation_id) sg_id : u32) {
 
+	let BLOCK_UNIT_INDEX = local_id.x / sg_size;  
+	let NUMBER_OF_BLOCKS = 128u / sg_size;  
+	let BLOCK_LENGTH = sg_size * 32u;  
+
 	// The unit number of warps.
 	// The workgroup_size must be multiple of sg_size.
-	let UNIT_SIZE = 128u / sg_size;
+	let UNIT_SIZE = udiv_up_safe32(128u, sg_size);
 
-	// Warps per dispatch. This could be read from uniform variable.
+	// Warps per unit. This could be read from uniform variable.
 	let NUM_OF_WARPS = 32u;
+
+	// Unit number.
+	let unit_id = local_id.x / UNIT_SIZE + 1u;
 
         // Pre calculated number of for loop iteratios that are needed.	
 	// We want to process certain number of subgroups.
-	let FOR_LOOP_ITERATIONS = NUM_OF_WARPS / UNIT_SIZE + 1u;
+	// let FOR_LOOP_ITERATIONS = NUM_OF_WARPS / UNIT_SIZE + 1u;
 
 	// Total number number of items for this dispatch.
 	let DISPATCH_OFFSET: u32 = NUM_OF_WARPS * sg_size;
@@ -60,16 +72,18 @@ fn main(@builtin(local_invocation_id)    local_id: vec3<u32>,
 
 	// The total sum of all bits in the whole group.
 	var group_sum = 0u;
-	var mask: vec4<u32>;
+	var mask: vec4<u32> = vec4<u32>(0u, 0u, 0u, 0u);
 
-	// TODO: when testing predicate, test indices. If indices is out of bounds => false.
-	for (var i=0u ; i < FOR_LOOP_ITERATIONS ; i++) {
+	for (var i=0u ; i < sg_size ; i++) {
 	    
-	    let input_data_index = DISPATCH_OFFSET * work_group_id.x + 128u * i + sg_id;  
+	    let input_data_index: u32 = DISPATCH_OFFSET* work_group_id.x + sg_size * i + unit_id * i + sg_id;  
 
-	    let temp_mask: vec4<u32> = subgroupBallot(input_array[input_data_index].test_value < 0.5); // Predicate for this.
+	    // Check if index is out of bounds. If it is, predicate is false.
+	    let predicate = select(false, input_array[input_data_index].test_value < 0.5, input_data_index < scan_params.data_size);
 
-            // Store the sum of subgroup bitmast one bits.
+	    let temp_mask: vec4<u32> = subgroupBallot(predicate);
+
+            // Store the sum of subgroup bitmask one bits.
 	    if (sg_id == 1u) {
 	    	one_bits = countOneBits(temp_mask.x);
 	    	one_bits += countOneBits(temp_mask.y);
