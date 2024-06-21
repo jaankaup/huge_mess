@@ -3,7 +3,7 @@ use bytemuck::{Pod, Zeroable};
 use std::mem::size_of;
 use engine::misc::index_to_uvec3;
 use engine::misc::uvec3_to_index;
-use engine::subgroup_test::WarpTest;
+use engine::subgroup_test::MultiLevelScan;
 use rand::prelude::*;
 use std::collections::HashMap;
 use std::collections::HashSet;
@@ -52,6 +52,9 @@ struct RadixApp {
     once: bool,
     temp_aabbs: Vec<AABB>,
     temp_arrows: Vec<Arrow>,
+    multi_level_scan: MultiLevelScan, 
+    // scan_params: wgpu::Buffer,
+    // input_data: wgpu::Buffer,
 }
 
 #[derive(Debug)]
@@ -84,15 +87,6 @@ impl RadixRequirements {
 
 #[repr(C)]
 #[derive(Debug, Clone, Copy, Pod, Zeroable)]
-struct ScanParams {
-    data_start_index: u32,
-    data_end_index: u32,
-    data_size: u32,
-    padding: u32,
-}
-
-#[repr(C)]
-#[derive(Debug, Clone, Copy, Pod, Zeroable)]
 struct InputData {
     test_data: f32,
 }
@@ -111,7 +105,7 @@ impl Application for RadixApp {
         println!("min_subgroup_size == {:?}", context.adapter.limits().min_subgroup_size);
         println!("max_subgroup_size == {:?}", context.adapter.limits().max_subgroup_size);
 
-        let warp_test = WarpTest::init(&context.device);
+        let warp_test = MultiLevelScan::init(&context.device);
 
         // Create camera.
         let mut camera = Camera::new(surface.config().width as f32,
@@ -147,8 +141,10 @@ impl Application for RadixApp {
                 2000000,
                 4000,
                 64);
+        let multi_level_scan = MultiLevelScan::init(&context.device);
 
         log::info!("Finished initialization.");
+
 
         Self {
             depth_texture: Some(Tex::create_depth_texture(&context, surface.config(), None)),
@@ -159,6 +155,7 @@ impl Application for RadixApp {
             once: true,
             temp_aabbs: Vec::new(),
             temp_arrows: Vec::new(),
+            multi_level_scan: multi_level_scan, 
         }
     }
 
