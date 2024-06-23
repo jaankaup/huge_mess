@@ -33,17 +33,32 @@ struct OtherRenderParams {
     scale_factor: f32,
 }
 
+/// GpuDebugger can be used to render some basic primitives like numbers, arrows, aabbs and aabb
+/// wires. 
 pub struct GpuDebugger {
+    /// A sub system for generating primives to renderable triangles.
     primitive_processor: PrimitiveProcessor,
+    /// A sub system for generating numbers to renderable points.
     char_processor: CharProcessor,
+    /// Maximum number of vertices that can be used for rendering in one part. The actual
+    /// rendering is done in multiple parts.
     max_number_of_vertices: u32,
+    /// Thread count is given for shader (work group size). This is not used now. 
     thread_count: u32,
+    /// A pipeline wrapper for rendering points (numbers).
     v3c1_pipeline_wrapper: RenderPipelineWrapper,
+    /// A pipeline wrapper for rendering primitives.
     v4n4_pipeline_wrapper: RenderPipelineWrapper,
+    /// Bind groups for number pipeline wrapper.
     v3c1_bind_group: wgpu::BindGroup,
+    /// Bind groups for primitive pipeline wrapper.
     v4n4_bind_group: wgpu::BindGroup,
+    /// Some parameters for rendering.
     render_params: RenderParamBuffer,
+    /// Light buffer for rendering shaders. 
     light: LightBuffer,
+    /// This histogram stores the count of all renderable elements. 
+    /// TODO: impove this to use tags.
     histogram_element_counter: Histogram,
 }
         // ADD these to gpu_debugger.
@@ -57,6 +72,9 @@ pub struct GpuDebugger {
 
 impl GpuDebugger {
 
+    /// Initializes GpuDebugger. Could this fail? TODO: -> Result<Self, Err>.
+    /// TODO: add a custom pipelines for rendering.
+    /// TODO: make shading adjustable.
     pub fn init(device: &wgpu::Device,
                 sc_desc: &wgpu::SurfaceConfiguration,
                 render_buffer: &wgpu::Buffer,
@@ -121,10 +139,13 @@ impl GpuDebugger {
         }
     }
 
+    /// Get reference to the buffer that holds all aabbs.
     pub fn get_aabb_buffer(&self) -> &wgpu::Buffer {
         &self.primitive_processor.get_aabb_buffer()
     }
 
+    /// Append aabb. TODO: rename this function to append_aabb. Also check that the appending
+    /// succeeded.
     pub fn add_aabb(&self, device: &wgpu::Device, queue: &wgpu::Queue, aabb: &AABB) {
 
         let mut histogram_values = self.histogram_element_counter.get_values(device, queue);
@@ -133,6 +154,7 @@ impl GpuDebugger {
         self.primitive_processor.append_aabb(device, queue, aabb, histogram_values[2]-1);
     }
 
+    /// Append multiple aabbs at once. TODO: add checking. Rename function. 
     pub fn add_aabbs(&self, device: &wgpu::Device, queue: &wgpu::Queue, aabb: &Vec<AABB>) {
         let mut histogram_values = self.histogram_element_counter.get_values(device, queue);
         let count_now = histogram_values[2];
@@ -141,6 +163,8 @@ impl GpuDebugger {
         self.primitive_processor.append_aabbs(device, queue, aabb, count_now);
     }
 
+    /// Append arrow. TODO: rename this function to append_arrow. Also check that the appending
+    /// succeeded.
     pub fn add_arrow(&self, device: &wgpu::Device, queue: &wgpu::Queue, arrow: &Arrow) {
 
         let mut histogram_values = self.histogram_element_counter.get_values(device, queue);
@@ -149,6 +173,7 @@ impl GpuDebugger {
         self.primitive_processor.insert_arrow(device, queue, arrow, histogram_values[1]-1);
     }
 
+    /// Append multiple arros at once. TODO: add checking. Rename function. 
     pub fn add_arrows(&self, device: &wgpu::Device, queue: &wgpu::Queue, arrows: &Vec<Arrow>) {
 
         assert!(arrows.len() > 0);
@@ -159,13 +184,13 @@ impl GpuDebugger {
         self.primitive_processor.insert_arrows(device, queue, arrows, count_now);
     }
 
+    /// Render all primives and numbers. Make some validation for draw buffer. TODO: Should this function
+    /// return a failure? TODO: finish the number rendering.
     pub fn render(&mut self,
                   device: &wgpu::Device,
                   queue: &wgpu::Queue,
                   view: &wgpu::TextureView,
                   draw_buffer: &wgpu::Buffer,
-                  // draw_bind_group: &wgpu::BindGroup,
-                  // draw_pipeline: &wgpu::RenderPipeline,
                   depth_texture: &Tex,
                   clear: &mut bool) {
 
@@ -178,11 +203,6 @@ impl GpuDebugger {
         let total_number_of_arrows = elem_counter[1];
         let total_number_of_aabbs = elem_counter[2];
         let total_number_of_aabb_wires = elem_counter[3];
-
-        // log::info!("total_number_of_chars == {:?}",total_number_of_chars);
-        // log::info!("total_number_of_arrows == {:?}",total_number_of_arrows);
-        // log::info!("total_number_of_aabbs == {:?}",total_number_of_aabbs);
-        // log::info!("total_number_of_aabb_wires == {:?}",total_number_of_aabb_wires);
 
         self.primitive_processor.render(
             device,
@@ -199,6 +219,19 @@ impl GpuDebugger {
             64,
             Some(wgpu::Color { r: 0.0, g: 0.0, b: 0.0, a: 1.0, }),
             clear);
+
+        self.char_processor.render(
+                  device,
+                  queue,
+                  draw_buffer,
+                  &self.v3c1_bind_group, //render_bindgroup: &wgpu::BindGroup,
+                  &self.v3c1_pipeline_wrapper.get_pipeline(),
+                  view,
+                  depth_texture,
+                  total_number_of_chars,
+                  self.max_number_of_vertices,
+                  Some(wgpu::Color { r: 0.0, g: 0.0, b: 0.0, a: 1.0, }),
+                  *clear);
 
         // Reset element counters.
         // let elem_counter = self.histogram_element_counter.reset_all_cpu_version(queue, 0);

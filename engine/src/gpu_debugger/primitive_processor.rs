@@ -25,6 +25,7 @@ use crate::buffer::buffer_from_data;
 use crate::misc::Convert2Vec;
 use crate::impl_convert;
 
+/// Vertex data that is used for rendering.
 #[repr(C)]
 #[derive(Debug, Clone, Copy, Pod, Zeroable)]
 struct Vertex {
@@ -32,6 +33,7 @@ struct Vertex {
     n: [f32; 4],
 }
 
+/// Triangle data for rendering.
 #[repr(C)]
 #[derive(Debug, Clone, Copy, Pod, Zeroable)]
 struct Triangle {
@@ -40,6 +42,7 @@ struct Triangle {
     c: Vertex,
 }
 
+/// AABB data structure. This is used for gpu debugger.
 #[repr(C)]
 #[derive(Debug, Clone, Copy, Pod, Zeroable)]
 pub struct AABB {
@@ -47,6 +50,7 @@ pub struct AABB {
     pub max: [f32; 4],
 }
 
+/// Arrow data structure. This is used for gpu debugger.
 #[repr(C)]
 #[derive(Debug, Clone, Copy, Pod, Zeroable)]
 pub struct Arrow {
@@ -57,25 +61,40 @@ pub struct Arrow {
     pub _padding: [u32; 2]
 }
 
+/// A internal data structure for generating and rendering arrays, aabbs ana aabb-wires.
 #[repr(C)]
 #[derive(Debug, Clone, Copy, Pod, Zeroable)]
 pub struct ArrowAabbParams{
+    /// The maximum number vertices that can be used for rendering.
     max_number_of_vertices: u32,
+    /// The primitive generation and rendering is done run in small parts. 
+    /// This is the start index for current iteration.
     iterator_start_index: u32,
+    /// This is the end index for current iteration.
     iterator_end_index: u32,
-    element_type: u32, // 0 :: array, 1 :: aabb, 2 :: aabb wire
+    /// The element type. 0 :: array, 1 :: aabb, 2 :: aabb wire
+    element_type: u32,
 }
 
 impl_convert!{Arrow}
 
+/// A sub system for gpu debugger. Creates from Arrow, AABB and AABBWires triangle mesh for
+/// rendering and performs the rendering. 
 pub struct PrimitiveProcessor {
 
+    /// Pipeline for the generating triangle mesh from Arrows, AABBs and AABB-wires.
     aabb_pipeline_wrapper: ComputePipelineWrapper,
+    /// Bind groups for aabb pipeline wrapper. TODO: add some checking for pipeline.
     aabb_bind_group: wgpu::BindGroup,
+    /// A buffer that stores the arrow data.
     arrow_buffer: wgpu::Buffer,
+    /// A buffer that stores the AABB data.
     aabb_buffer: wgpu::Buffer,
+    /// A buffer that stores the AABB-wire data.
     aabb_wire_buffer: wgpu::Buffer,
+    /// Explain what this is later...
     arrow_params_buffer: wgpu::Buffer,
+    /// Explain what this is later...
     arrow_aabb_params: ArrowAabbParams,
 }
 

@@ -1,3 +1,4 @@
+use engine::gpu_debugger::char_generator::{Char, CharProcessor};
 use engine::gpu_debugger::primitive_processor::Arrow;
 use std::mem::transmute;
 use engine::gpu_debugger::primitive_processor::AABB;
