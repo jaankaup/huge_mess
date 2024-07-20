@@ -289,6 +289,7 @@ pub async fn setup<F: WGPUFeatures>(surface: &mut SurfaceWrapper, window: Arc<Wi
                 label: None,
                 required_features: (optional_features & adapter_features) | required_features,
                 required_limits: needed_limits,
+                memory_hints: wgpu::MemoryHints::Performance,
             },
             trace_dir.ok().as_ref().map(std::path::Path::new),
             )
